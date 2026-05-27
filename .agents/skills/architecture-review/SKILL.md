@@ -22,5 +22,6 @@ pnpm test
 - Preload exposes typed wrappers only and no raw IPC.
 - IPC contracts contain schemas/channels/DTOs only.
 - Domain/application stay runtime-free.
+- Sandcastle imports stay in the utility-process worker path.
 - Main/infrastructure adapters do not import renderer code.
 - New IPC capabilities validate inputs and have tests.

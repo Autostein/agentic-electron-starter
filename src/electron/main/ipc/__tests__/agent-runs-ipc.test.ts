@@ -1,0 +1,362 @@
+import { describe, expect, it } from 'vitest';
+import type {
+  AgentRunCommitDetail,
+  AgentRunCommitFileDiff,
+  AgentRunCommitSummary,
+} from '../../../../application/use-cases/agent-runs/commit-read-models';
+import type { GitCommitReadService } from '../../../../application/use-cases/agent-runs/ports/git-commit-read-service';
+import type {
+  AgentRun,
+  AgentRunCommit,
+  AgentRunEvent,
+  AgentRunRepository,
+  AgentRunStatus,
+  CreateAgentRunInput,
+  AgentRunner,
+} from '../../../../domain/agent-runs';
+import type {
+  AgentRuntimeSettings,
+  AgentRuntimeSettingsRepository,
+  DockerImageBuildEvent,
+  DockerImageBuilder,
+  DockerImageBuildResult,
+  DockerImageStatus,
+} from '../../../../domain/agent-runtime';
+import type { Project, ProjectInput, ProjectRepository } from '../../../../domain/projects';
+import { createAgentRunsIpcHandlers } from '../register-agent-runs-ipc';
+
+class FakeProjectRepository implements ProjectRepository {
+  project: Project = {
+    id: 'project-1',
+    path: '/repo',
+    name: 'repo',
+    currentBranch: 'main',
+    createdAt: 1,
+    updatedAt: 1,
+  };
+
+  async listProjects(): Promise<Project[]> {
+    return [this.project];
+  }
+
+  async getProject(id: string): Promise<Project | null> {
+    return id === this.project.id ? this.project : null;
+  }
+
+  async upsertProject(input: ProjectInput): Promise<Project> {
+    return { ...this.project, ...input };
+  }
+}
+
+class FakeSettingsRepository implements AgentRuntimeSettingsRepository {
+  async getSettings(): Promise<AgentRuntimeSettings> {
+    return {
+      dockerImageName: 'agentic:test',
+      claudeDefaultModel: 'claude-opus-4-7',
+      codexDefaultModel: 'gpt-5.4',
+      claudeAuthMountEnabled: true,
+      claudeAuthHostPath: '/home/me/.claude',
+      codexAuthMountEnabled: true,
+      codexAuthHostPath: '/home/me/.codex',
+      updatedAt: 1,
+    };
+  }
+
+  async updateSettings(): Promise<AgentRuntimeSettings> {
+    return this.getSettings();
+  }
+}
+
+class FakeRunRepository implements AgentRunRepository {
+  runs = new Map<string, AgentRun>();
+  events: AgentRunEvent[] = [];
+  commits: AgentRunCommit[] = [];
+
+  async createRun(input: CreateAgentRunInput): Promise<AgentRun> {
+    const run: AgentRun = {
+      ...input,
+      status: 'queued',
+      startedAt: null,
+      finishedAt: null,
+      errorMessage: null,
+    };
+    this.runs.set(run.id, run);
+    return run;
+  }
+
+  async getRun(id: string): Promise<AgentRun | null> {
+    return this.runs.get(id) ?? null;
+  }
+
+  async listRuns(): Promise<AgentRun[]> {
+    return [...this.runs.values()];
+  }
+
+  async updateRunStatus(
+    id: string,
+    status: AgentRunStatus,
+    timestamps: { startedAt?: number | null; finishedAt?: number | null; errorMessage?: string | null },
+  ): Promise<void> {
+    const run = this.runs.get(id);
+    if (run) {
+      this.runs.set(id, { ...run, ...timestamps, status });
+    }
+  }
+
+  async appendEvent(event: AgentRunEvent): Promise<void> {
+    this.events.push(event);
+  }
+
+  async listEvents(): Promise<AgentRunEvent[]> {
+    return this.events;
+  }
+
+  async appendCommit(commit: AgentRunCommit): Promise<void> {
+    this.commits.push(commit);
+  }
+
+  async listCommits(): Promise<AgentRunCommit[]> {
+    return this.commits;
+  }
+}
+
+class FakeRunner implements AgentRunner {
+  started = false;
+
+  async start(): Promise<void> {
+    this.started = true;
+  }
+
+  async cancel(): Promise<void> {}
+}
+
+class FakeDockerImageBuilder implements DockerImageBuilder {
+  available = true;
+
+  async getImageStatus(input: { imageName: string }, checkedAt: number): Promise<DockerImageStatus> {
+    return {
+      imageName: input.imageName,
+      available: this.available,
+      checkedAt,
+      errorMessage: this.available ? undefined : 'Image not found locally.',
+    };
+  }
+
+  async buildImage(
+    input: { imageName: string },
+    _onEvent: (event: DockerImageBuildEvent) => void,
+  ): Promise<DockerImageBuildResult> {
+    return { imageName: input.imageName, succeeded: true };
+  }
+}
+
+class FakeGitCommitReadService implements GitCommitReadService {
+  async getCommitSummary(input: { commit: AgentRunCommit }): Promise<AgentRunCommitSummary> {
+    return {
+      ...input.commit,
+      shortSha: input.commit.sha.slice(0, 7),
+      subject: 'Commit subject',
+      filesChanged: 1,
+      additions: 2,
+      deletions: 1,
+      unavailable: false,
+    };
+  }
+
+  async getCommitDetail(input: { runId: string; sha: string }): Promise<AgentRunCommitDetail> {
+    return {
+      runId: input.runId,
+      sha: input.sha,
+      shortSha: input.sha.slice(0, 7),
+      subject: 'Commit subject',
+      authorName: 'Dev',
+      authorEmail: 'dev@example.com',
+      committedAt: 123,
+      filesChanged: 1,
+      additions: 1,
+      deletions: 0,
+      files: [
+        {
+          oldPath: 'README.md',
+          newPath: 'README.md',
+          status: 'modified',
+          additions: 1,
+          deletions: 0,
+          isLarge: false,
+          hunks: [],
+        },
+      ],
+    };
+  }
+
+  async getCommitFileDiff(): Promise<AgentRunCommitFileDiff> {
+    return {
+      oldPath: 'README.md',
+      newPath: 'README.md',
+      status: 'modified',
+      additions: 1,
+      deletions: 0,
+      isLarge: false,
+      hunks: [],
+    };
+  }
+}
+
+describe('agent run IPC handlers', () => {
+  it('validates start input and delegates to the runner', async () => {
+    const runner = new FakeRunner();
+    const handlers = createAgentRunsIpcHandlers({
+      agentRunRepository: new FakeRunRepository(),
+      agentRunner: runner,
+      gitCommitReadService: new FakeGitCommitReadService(),
+      projectRepository: new FakeProjectRepository(),
+      settingsRepository: new FakeSettingsRepository(),
+      dockerImageBuilder: new FakeDockerImageBuilder(),
+      createLogFilePath: (runId) => `/logs/${runId}.log`,
+      publishEvent: () => undefined,
+      now: () => 123,
+    });
+
+    const run = await handlers.start(null, {
+      projectId: 'project-1',
+      provider: 'codex',
+      model: 'gpt-5.4',
+      prompt: 'Implement it',
+    });
+
+    expect(run.status).toBe('queued');
+    expect(runner.started).toBe(true);
+  });
+
+  it('rejects invalid provider payloads', async () => {
+    const handlers = createAgentRunsIpcHandlers({
+      agentRunRepository: new FakeRunRepository(),
+      agentRunner: new FakeRunner(),
+      gitCommitReadService: new FakeGitCommitReadService(),
+      projectRepository: new FakeProjectRepository(),
+      settingsRepository: new FakeSettingsRepository(),
+      dockerImageBuilder: new FakeDockerImageBuilder(),
+      createLogFilePath: (runId) => `/logs/${runId}.log`,
+      publishEvent: () => undefined,
+      now: () => 123,
+    });
+
+    await expect(
+      handlers.start(null, {
+        projectId: 'project-1',
+        provider: 'bad-provider',
+        model: 'model',
+        prompt: 'Prompt',
+      }),
+    ).rejects.toThrow();
+  });
+
+  it('rejects start when the sandbox image is missing', async () => {
+    const runner = new FakeRunner();
+    const dockerImageBuilder = new FakeDockerImageBuilder();
+    dockerImageBuilder.available = false;
+    const runRepository = new FakeRunRepository();
+    const handlers = createAgentRunsIpcHandlers({
+      agentRunRepository: runRepository,
+      agentRunner: runner,
+      gitCommitReadService: new FakeGitCommitReadService(),
+      projectRepository: new FakeProjectRepository(),
+      settingsRepository: new FakeSettingsRepository(),
+      dockerImageBuilder,
+      createLogFilePath: (runId) => `/logs/${runId}.log`,
+      publishEvent: () => undefined,
+      now: () => 123,
+    });
+
+    await expect(
+      handlers.start(null, {
+        projectId: 'project-1',
+        provider: 'codex',
+        model: 'gpt-5.4',
+        prompt: 'Implement it',
+      }),
+    ).rejects.toThrow('Sandbox image is not available. Build it first.');
+
+    expect(await runRepository.listRuns()).toEqual([]);
+    expect(runner.started).toBe(false);
+  });
+
+  it('returns commit details for a recorded run commit', async () => {
+    const runRepository = new FakeRunRepository();
+    runRepository.runs.set('run-1', {
+      id: 'run-1',
+      projectId: 'project-1',
+      projectPath: '/repo',
+      projectName: 'repo',
+      provider: 'codex',
+      model: 'gpt-5.4',
+      prompt: 'Prompt',
+      maxIterations: 1,
+      status: 'succeeded',
+      branchName: 'agentic/run-1',
+      logFilePath: '/logs/run-1.log',
+      createdAt: 1,
+      startedAt: 2,
+      finishedAt: 3,
+      errorMessage: null,
+    });
+    runRepository.commits.push({ runId: 'run-1', sha: 'abcdef123', createdAt: 3 });
+    const handlers = createAgentRunsIpcHandlers({
+      agentRunRepository: runRepository,
+      agentRunner: new FakeRunner(),
+      gitCommitReadService: new FakeGitCommitReadService(),
+      projectRepository: new FakeProjectRepository(),
+      settingsRepository: new FakeSettingsRepository(),
+      dockerImageBuilder: new FakeDockerImageBuilder(),
+      createLogFilePath: (runId) => `/logs/${runId}.log`,
+      publishEvent: () => undefined,
+      now: () => 123,
+    });
+
+    await expect(handlers.getCommitDetails(null, {
+      runId: 'run-1',
+      sha: 'abcdef123',
+    })).resolves.toMatchObject({
+      runId: 'run-1',
+      sha: 'abcdef123',
+      subject: 'Commit subject',
+    });
+  });
+
+  it('rejects commit details for commits not recorded on the run', async () => {
+    const runRepository = new FakeRunRepository();
+    runRepository.runs.set('run-1', {
+      id: 'run-1',
+      projectId: 'project-1',
+      projectPath: '/repo',
+      projectName: 'repo',
+      provider: 'codex',
+      model: 'gpt-5.4',
+      prompt: 'Prompt',
+      maxIterations: 1,
+      status: 'succeeded',
+      branchName: 'agentic/run-1',
+      logFilePath: '/logs/run-1.log',
+      createdAt: 1,
+      startedAt: 2,
+      finishedAt: 3,
+      errorMessage: null,
+    });
+    const handlers = createAgentRunsIpcHandlers({
+      agentRunRepository: runRepository,
+      agentRunner: new FakeRunner(),
+      gitCommitReadService: new FakeGitCommitReadService(),
+      projectRepository: new FakeProjectRepository(),
+      settingsRepository: new FakeSettingsRepository(),
+      dockerImageBuilder: new FakeDockerImageBuilder(),
+      createLogFilePath: (runId) => `/logs/${runId}.log`,
+      publishEvent: () => undefined,
+      now: () => 123,
+    });
+
+    await expect(handlers.getCommitDetails(null, {
+      runId: 'run-1',
+      sha: 'missing',
+    })).rejects.toThrow('Commit is not recorded on this run.');
+  });
+});

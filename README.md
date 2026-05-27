@@ -1,6 +1,6 @@
 # Agentic Electron Starter
 
-Electron + React desktop app template with typed IPC, SQLite persistence, and agent-oriented project guidance.
+Electron + React desktop app template with typed IPC, SQLite persistence, and a Sandcastle-powered local agent orchestration cockpit.
 
 ## Stack
 
@@ -10,6 +10,8 @@ Electron + React desktop app template with typed IPC, SQLite persistence, and ag
 - `contextBridge` preload API
 - SQLite via built-in `node:sqlite`
 - Drizzle Kit for schema-driven migration generation
+- Sandcastle run orchestration in an Electron utility-process worker
+- Docker sandbox image built from app-owned resources
 - Zod-validated IPC contracts
 - Vitest, ESLint, Dependency Cruiser
 
@@ -47,3 +49,23 @@ src/
 ```
 
 The golden feature is `notes`: route -> renderer client/hooks -> preload bridge -> Zod IPC contract -> main IPC handler -> use-case -> SQLite repository.
+
+The primary workflow is agent runs:
+
+```text
+renderer route
+  -> React Query feature client
+  -> window.desktop.agentRuns
+  -> Zod IPC contract
+  -> Electron main IPC handler
+  -> application use-case
+  -> SQLite run repository
+  -> utility-process Sandcastle worker
+  -> Docker sandbox
+```
+
+Target repositories do not need `.sandcastle` files. The app creates a normal Git branch named `agentic/<run-id>-<slug>`, prepares an app-owned worktree under Electron `userData`, and runs Sandcastle in that worktree. Runs never auto-merge.
+
+Provider auth is CLI-auth only in v1. Settings let users mount Claude/Codex config directories read-only into the Docker sandbox for the selected provider; no API keys are stored in SQLite, IPC, or Keychain.
+
+Before first run, open Settings and build the default sandbox image. Docker must be installed and running.

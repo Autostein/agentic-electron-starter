@@ -1,9 +1,10 @@
-import { Home, NotebookText, Settings } from 'lucide-react';
+import { Bot, FolderGit2, NotebookText, Settings } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router';
 
 const navItems = [
-  { to: '/', label: 'Home', icon: Home },
-  { to: '/notes', label: 'Notes', icon: NotebookText },
+  { to: '/', label: 'Runs', icon: Bot },
+  { to: '/projects', label: 'Projects', icon: FolderGit2 },
+  { to: '/notes', label: 'Notes sample', icon: NotebookText },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -14,7 +15,7 @@ export function AppShell() {
         <aside className="border-r border-zinc-800 bg-zinc-900/80 px-4 py-5">
           <div className="mb-8">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300">
-              Template
+              Orchestration
             </p>
             <h1 className="mt-2 text-xl font-semibold text-white">
               Agentic Electron

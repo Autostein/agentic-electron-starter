@@ -22,6 +22,26 @@ describe('NotesPage', () => {
       appInfo: {
         get: vi.fn(),
       },
+      projects: {
+        pick: vi.fn(),
+        list: vi.fn(),
+      },
+      agentRuns: {
+        start: vi.fn(),
+        list: vi.fn(),
+        get: vi.fn(),
+        getCommitDetails: vi.fn(),
+        getCommitFileDiff: vi.fn(),
+        cancel: vi.fn(),
+        onEvent: vi.fn(() => () => undefined),
+      },
+      agentRuntime: {
+        getSettings: vi.fn(),
+        updateSettings: vi.fn(),
+        getImageStatus: vi.fn(),
+        buildImage: vi.fn(),
+        onBuildEvent: vi.fn(() => () => undefined),
+      },
       notes: {
         list: vi.fn(async () => notes),
         create: vi.fn(async (input) => {

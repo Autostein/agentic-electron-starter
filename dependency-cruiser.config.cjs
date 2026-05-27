@@ -5,7 +5,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/electron/renderer' },
       to: {
-        path: '^(electron|node:|fs$|path$|crypto$|os$|child_process$|src/electron/(main|preload)|src/infrastructure/main)',
+        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|src/electron/(main|preload)|src/infrastructure/main)',
       },
     },
     {
@@ -13,7 +13,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/electron/preload' },
       to: {
-        path: '^src/(domain|application|infrastructure/main|electron/main|electron/renderer)',
+        path: '^(@ai-hero/sandcastle|src/(domain|application|infrastructure/main|electron/main|electron/renderer))',
       },
     },
     {
@@ -21,7 +21,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/infrastructure/ipc' },
       to: {
-        path: '^(electron|node:|fs$|path$|crypto$|os$|child_process$|src/(domain|application|infrastructure/main|electron))',
+        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|src/(domain|application|infrastructure/main|electron))',
       },
     },
     {
@@ -29,7 +29,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/(domain|application)' },
       to: {
-        path: '^(electron|node:|fs$|path$|crypto$|os$|child_process$|react$|react-dom$|src/(electron|infrastructure))',
+        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|react$|react-dom$|src/(electron|infrastructure))',
       },
     },
     {

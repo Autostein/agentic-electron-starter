@@ -9,7 +9,7 @@ import { FuseV1Options, FuseVersion } from '@electron/fuses';
 const config = {
   packagerConfig: {
     asar: true,
-    extraResource: ['drizzle'],
+    extraResource: ['drizzle', 'resources/sandcastle'],
   },
   rebuildConfig: {},
   makers: [
@@ -23,6 +23,11 @@ const config = {
       build: [
         {
           entry: 'src/electron/main/main.ts',
+          config: 'vite.main.config.ts',
+          target: 'main',
+        },
+        {
+          entry: 'src/electron/main/agent-runner-worker.ts',
           config: 'vite.main.config.ts',
           target: 'main',
         },
