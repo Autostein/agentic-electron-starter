@@ -1,0 +1,78 @@
+{
+  "name": "agentic-electron-starter",
+  "productName": "Agentic Electron Starter",
+  "version": "0.1.0",
+  "description": "Electron + React desktop app template with typed IPC, SQLite, and agent-oriented architecture.",
+  "main": ".vite/build/main.js",
+  "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "pnpm@11.1.2",
+  "scripts": {
+    "check:node": "node scripts/check-node-version.mjs",
+    "ensure:electron": "pnpm check:node && node scripts/ensure-electron.mjs",
+    "preinstall": "node scripts/check-node-version.mjs",
+    "dev": "pnpm ensure:electron && electron-forge start",
+    "build": "pnpm ensure:electron && electron-forge package",
+    "package": "pnpm ensure:electron && electron-forge package",
+    "make": "pnpm ensure:electron && electron-forge make",
+    "typecheck": "pnpm check:node && tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.preload.json && tsc --noEmit -p tsconfig.renderer.json && tsc --noEmit -p tsconfig.test.json",
+    "lint": "pnpm check:node && eslint --ext .ts,.tsx .",
+    "lint:arch": "pnpm check:node && depcruise src --config dependency-cruiser.config.cjs",
+    "test": "pnpm check:node && vitest run",
+    "test:watch": "pnpm check:node && vitest",
+    "db:generate": "pnpm check:node && drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "pnpm check:node && node --import tsx scripts/migrate-dev-db.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "electron-winstaller",
+      "esbuild"
+    ]
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.90.21",
+    "electron-squirrel-startup": "1.0.1",
+    "lucide-react": "0.575.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-router": "7.13.0",
+    "zod": "4.1.13"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "7.11.1",
+    "@electron-forge/maker-deb": "7.11.1",
+    "@electron-forge/maker-rpm": "7.11.1",
+    "@electron-forge/maker-squirrel": "7.11.1",
+    "@electron-forge/maker-zip": "7.11.1",
+    "@electron-forge/plugin-fuses": "7.11.1",
+    "@electron-forge/plugin-vite": "7.11.1",
+    "@electron/fuses": "1.8.0",
+    "@tailwindcss/vite": "4.2.1",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.2",
+    "@types/electron-squirrel-startup": "1.0.2",
+    "@types/node": "25.3.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@typescript-eslint/eslint-plugin": "8.49.0",
+    "@typescript-eslint/parser": "8.49.0",
+    "@vitejs/plugin-react": "5.1.4",
+    "dependency-cruiser": "17.3.1",
+    "drizzle-kit": "0.31.9",
+    "drizzle-orm": "0.45.1",
+    "electron": "42.3.0",
+    "eslint": "8.57.1",
+    "eslint-import-resolver-typescript": "4.4.4",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-react-hooks": "7.0.1",
+    "jsdom": "26.1.0",
+    "tailwindcss": "4.2.1",
+    "tsx": "4.21.0",
+    "typescript": "5.6.3",
+    "vite": "5.4.21",
+    "vitest": "4.0.18"
+  }
+}

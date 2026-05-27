@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM"],
+    "types": ["electron"]
+  },
+  "include": [
+    "src/infrastructure/ipc/**/*.ts",
+    "src/electron/preload/**/*.ts",
+    "forge.env.d.ts",
+    "vite.preload.config.ts"
+  ],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

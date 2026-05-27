@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/infrastructure/ipc/**/*.ts",
+    "src/electron/renderer/**/*.ts",
+    "src/electron/renderer/**/*.tsx",
+    "forge.env.d.ts",
+    "vite.renderer.config.ts"
+  ],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}
