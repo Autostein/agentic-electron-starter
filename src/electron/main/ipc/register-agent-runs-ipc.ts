@@ -3,24 +3,24 @@ import { ipcMain } from 'electron';
 import type {
   AgentRunCommitDetail,
   AgentRunCommitFileDiff,
-} from '../../../application/use-cases/agent-runs/commit-read-models';
-import { cancelAgentRun } from '../../../application/use-cases/agent-runs/cancel-agent-run';
-import { getAgentRun } from '../../../application/use-cases/agent-runs/get-agent-run';
-import { getAgentRunCommitDetails } from '../../../application/use-cases/agent-runs/get-agent-run-commit-details';
-import { getAgentRunCommitFileDiff } from '../../../application/use-cases/agent-runs/get-agent-run-commit-file-diff';
-import { listAgentRuns } from '../../../application/use-cases/agent-runs/list-agent-runs';
-import type { GitCommitReadService } from '../../../application/use-cases/agent-runs/ports/git-commit-read-service';
-import { startAgentRun } from '../../../application/use-cases/agent-runs/start-agent-run';
+} from '@/core/agent-runs/application/read-models/commit-diff';
+import { cancelAgentRun } from '@/core/agent-runs/application/use-cases/cancel-agent-run';
+import { getAgentRun } from '@/core/agent-runs/application/use-cases/get-agent-run';
+import { getAgentRunCommitDetails } from '@/core/agent-runs/application/use-cases/get-agent-run-commit-details';
+import { getAgentRunCommitFileDiff } from '@/core/agent-runs/application/use-cases/get-agent-run-commit-file-diff';
+import { listAgentRuns } from '@/core/agent-runs/application/use-cases/list-agent-runs';
+import type { GitCommitReadService } from '@/core/agent-runs/application/ports/git-commit-read-service';
+import { startAgentRun } from '@/core/agent-runs/application/use-cases/start-agent-run';
 import type {
   AgentRunEvent,
   AgentRunRepository,
   AgentRunner,
-} from '../../../domain/agent-runs';
+} from '@/core/agent-runs/domain';
 import type {
   AgentRuntimeSettingsRepository,
   DockerImageBuilder,
-} from '../../../domain/agent-runtime';
-import type { ProjectRepository } from '../../../domain/projects';
+} from '@/core/agent-runtime/domain';
+import type { ProjectRepository } from '@/core/projects/domain';
 import {
   AGENT_RUNS_IPC_CHANNELS,
   AgentRunCommitDetailSchema,
@@ -36,7 +36,7 @@ import {
   StartAgentRunInputSchema,
   type AgentRunDetailResult,
   type AgentRunResult,
-} from '../../../infrastructure/ipc/agent-runs.contract';
+} from '@/contracts/ipc/agent-runs.contract';
 
 export type AgentRunsIpcDeps = {
   agentRunRepository: AgentRunRepository;

@@ -1,13 +1,13 @@
 import { ipcMain } from 'electron';
-import { listProjects } from '../../../application/use-cases/projects/list-projects';
-import { registerProject } from '../../../application/use-cases/projects/register-project';
-import type { GitRepositoryInspector, ProjectRepository } from '../../../domain/projects';
+import { listProjects } from '@/core/projects/application/use-cases/list-projects';
+import { registerProject } from '@/core/projects/application/use-cases/register-project';
+import type { GitRepositoryInspector, ProjectRepository } from '@/core/projects/domain';
 import {
   PROJECTS_IPC_CHANNELS,
   ProjectResultSchema,
   ProjectsListResultSchema,
   type ProjectResult,
-} from '../../../infrastructure/ipc/projects.contract';
+} from '@/contracts/ipc/projects.contract';
 
 export type ProjectsIpcDeps = {
   gitRepositoryInspector: GitRepositoryInspector;

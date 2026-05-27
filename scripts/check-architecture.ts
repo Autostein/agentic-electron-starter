@@ -34,6 +34,7 @@ function checkFile(file: string): Violation[] {
 
     if (relativeFile.startsWith('src/electron/renderer/')) {
       if (isNodeOrElectronImport(importPath) || startsWithAny(resolvedPath, [
+        'src/core/',
         'src/electron/main/',
         'src/electron/preload/',
         'src/infrastructure/main/',
@@ -43,9 +44,8 @@ function checkFile(file: string): Violation[] {
     }
 
     if (relativeFile.startsWith('src/electron/preload/')) {
-      if (startsWithAny(resolvedPath, [
-        'src/domain/',
-        'src/application/',
+      if ((isNodeImport(importPath) || importPath === '@ai-hero/sandcastle') || startsWithAny(resolvedPath, [
+        'src/core/',
         'src/infrastructure/main/',
         'src/electron/main/',
         'src/electron/renderer/',
@@ -54,23 +54,23 @@ function checkFile(file: string): Violation[] {
       }
     }
 
-    if (relativeFile.startsWith('src/infrastructure/ipc/')) {
+    if (relativeFile.startsWith('src/contracts/ipc/')) {
       if (isNodeOrElectronImport(importPath) || startsWithAny(resolvedPath, [
-        'src/domain/',
-        'src/application/',
-        'src/infrastructure/main/',
+        'src/core/',
+        'src/infrastructure/',
         'src/electron/',
       ])) {
         checks.push({ file, importPath, rule: 'IPC contracts must stay runtime-free' });
       }
     }
 
-    if (relativeFile.startsWith('src/domain/') || relativeFile.startsWith('src/application/')) {
+    if (relativeFile.startsWith('src/core/')) {
       if (isNodeOrElectronImport(importPath) || importPath === 'react' || importPath === 'react-dom' || startsWithAny(resolvedPath, [
+        'src/contracts/',
         'src/electron/',
         'src/infrastructure/',
       ])) {
-        checks.push({ file, importPath, rule: 'domain/application must stay runtime-free' });
+        checks.push({ file, importPath, rule: 'core must stay runtime-free' });
       }
     }
 
@@ -128,11 +128,17 @@ function resolveImportPath(file: string, importPath: string): string {
   return importPath;
 }
 
+function isNodeImport(importPath: string): boolean {
+  return (
+    importPath.startsWith('node:') ||
+    ['fs', 'path', 'crypto', 'os', 'child_process'].includes(importPath)
+  );
+}
+
 function isNodeOrElectronImport(importPath: string): boolean {
   return (
     importPath === 'electron' ||
-    importPath.startsWith('node:') ||
-    ['fs', 'path', 'crypto', 'os', 'child_process'].includes(importPath)
+    isNodeImport(importPath)
   );
 }
 

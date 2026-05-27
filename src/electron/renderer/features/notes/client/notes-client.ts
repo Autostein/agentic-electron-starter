@@ -1,4 +1,4 @@
-import type { CreateNoteInput, DeleteNoteInput } from '@/infrastructure/ipc/notes.contract';
+import type { CreateNoteInput, DeleteNoteInput } from '@/contracts/ipc/notes.contract';
 
 export function listNotes() {
   return window.desktop.notes.list();

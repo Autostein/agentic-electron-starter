@@ -1,4 +1,4 @@
-import type { CreateNoteRecord, Note, NoteRepository } from '../../../domain/notes';
+import type { CreateNoteRecord, Note, NoteRepository } from '@/core/notes/domain';
 import { getMainDatabase } from './db/client';
 
 export class SQLiteNoteRepository implements NoteRepository {

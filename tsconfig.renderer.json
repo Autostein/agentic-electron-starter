@@ -5,7 +5,7 @@
     "types": ["vite/client"]
   },
   "include": [
-    "src/infrastructure/ipc/**/*.ts",
+    "src/contracts/ipc/**/*.ts",
     "src/electron/renderer/**/*.ts",
     "src/electron/renderer/**/*.tsx",
     "forge.env.d.ts",

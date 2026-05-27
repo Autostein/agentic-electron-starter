@@ -14,7 +14,7 @@ describe('dependency cruiser config', () => {
         'renderer-no-privileged-runtime',
         'preload-only-bridge-and-contracts',
         'ipc-contracts-are-runtime-free',
-        'domain-and-application-are-runtime-free',
+        'core-is-runtime-free',
         'main-never-imports-renderer-or-preload',
       ]),
     );

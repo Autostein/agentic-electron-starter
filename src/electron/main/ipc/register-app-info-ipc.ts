@@ -1,11 +1,11 @@
 import { ipcMain } from 'electron';
-import { getAppInfo } from '../../../application/use-cases/app-info/get-app-info';
-import type { AppInfoProvider } from '../../../domain/app-info';
+import { getAppInfo } from '@/core/app-info/application/use-cases/get-app-info';
+import type { AppInfoProvider } from '@/core/app-info/domain';
 import {
   APP_INFO_IPC_CHANNELS,
   AppInfoResultSchema,
   type AppInfoResult,
-} from '../../../infrastructure/ipc/app-info.contract';
+} from '@/contracts/ipc/app-info.contract';
 
 export type AppInfoIpcDeps = {
   appInfoProvider: AppInfoProvider;

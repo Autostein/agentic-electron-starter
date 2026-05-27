@@ -1,13 +1,13 @@
 import { ipcMain } from 'electron';
-import { buildSandboxImage } from '../../../application/use-cases/agent-runtime/build-sandbox-image';
-import { getSandboxImageStatus } from '../../../application/use-cases/agent-runtime/get-sandbox-image-status';
-import { getRuntimeSettings } from '../../../application/use-cases/agent-runtime/get-runtime-settings';
-import { updateRuntimeSettings } from '../../../application/use-cases/agent-runtime/update-runtime-settings';
+import { buildSandboxImage } from '@/core/agent-runtime/application/use-cases/build-sandbox-image';
+import { getSandboxImageStatus } from '@/core/agent-runtime/application/use-cases/get-sandbox-image-status';
+import { getRuntimeSettings } from '@/core/agent-runtime/application/use-cases/get-runtime-settings';
+import { updateRuntimeSettings } from '@/core/agent-runtime/application/use-cases/update-runtime-settings';
 import type {
   DockerImageBuildEvent,
   DockerImageBuilder,
   AgentRuntimeSettingsRepository,
-} from '../../../domain/agent-runtime';
+} from '@/core/agent-runtime/domain';
 import {
   AGENT_RUNTIME_IPC_CHANNELS,
   AgentRuntimeSettingsResultSchema,
@@ -17,7 +17,7 @@ import {
   type AgentRuntimeSettingsResult,
   type DockerImageBuildResult,
   type DockerImageStatusResult,
-} from '../../../infrastructure/ipc/agent-runtime.contract';
+} from '@/contracts/ipc/agent-runtime.contract';
 
 export type AgentRuntimeIpcDeps = {
   dockerImageBuilder: DockerImageBuilder;

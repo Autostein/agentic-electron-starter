@@ -6,7 +6,7 @@ import type {
   DockerImageBuilder,
   DockerImageBuildResult,
   DockerImageStatus,
-} from '../../../domain/agent-runtime';
+} from '@/core/agent-runtime/domain';
 
 export type LocalDockerImageBuilderOptions = {
   userDataPath: string;

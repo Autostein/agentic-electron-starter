@@ -5,7 +5,7 @@ import type {
   AgentRunCommitFileDiff,
   AgentRunCommitResult,
   AgentRunDiffLineResult,
-} from '../../../../../infrastructure/ipc/agent-runs.contract';
+} from '@/contracts/ipc/agent-runs.contract';
 import {
   useAgentRun,
   useAgentRunCommitDetails,

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { Project, ProjectInput, ProjectRepository } from '../../../domain/projects';
+import type { Project, ProjectInput, ProjectRepository } from '@/core/projects/domain';
 import { getMainDatabase } from './db/client';
 
 export class SQLiteProjectRepository implements ProjectRepository {

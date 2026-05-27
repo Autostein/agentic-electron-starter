@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { ipcMain } from 'electron';
-import { createNote } from '../../../application/use-cases/notes/create-note';
-import { deleteNote } from '../../../application/use-cases/notes/delete-note';
-import { listNotes } from '../../../application/use-cases/notes/list-notes';
-import type { NoteRepository } from '../../../domain/notes';
+import { createNote } from '@/core/notes/application/use-cases/create-note';
+import { deleteNote } from '@/core/notes/application/use-cases/delete-note';
+import { listNotes } from '@/core/notes/application/use-cases/list-notes';
+import type { NoteRepository } from '@/core/notes/domain';
 import {
   CreateNoteInputSchema,
   DeleteNoteInputSchema,
@@ -11,7 +11,7 @@ import {
   NoteResultSchema,
   NotesListResultSchema,
   type NoteResult,
-} from '../../../infrastructure/ipc/notes.contract';
+} from '@/contracts/ipc/notes.contract';
 
 export type NotesIpcDeps = {
   noteRepository: NoteRepository;

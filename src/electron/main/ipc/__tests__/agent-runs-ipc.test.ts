@@ -3,8 +3,8 @@ import type {
   AgentRunCommitDetail,
   AgentRunCommitFileDiff,
   AgentRunCommitSummary,
-} from '../../../../application/use-cases/agent-runs/commit-read-models';
-import type { GitCommitReadService } from '../../../../application/use-cases/agent-runs/ports/git-commit-read-service';
+} from '@/core/agent-runs/application/read-models/commit-diff';
+import type { GitCommitReadService } from '@/core/agent-runs/application/ports/git-commit-read-service';
 import type {
   AgentRun,
   AgentRunCommit,
@@ -13,7 +13,7 @@ import type {
   AgentRunStatus,
   CreateAgentRunInput,
   AgentRunner,
-} from '../../../../domain/agent-runs';
+} from '@/core/agent-runs/domain';
 import type {
   AgentRuntimeSettings,
   AgentRuntimeSettingsRepository,
@@ -21,8 +21,8 @@ import type {
   DockerImageBuilder,
   DockerImageBuildResult,
   DockerImageStatus,
-} from '../../../../domain/agent-runtime';
-import type { Project, ProjectInput, ProjectRepository } from '../../../../domain/projects';
+} from '@/core/agent-runtime/domain';
+import type { Project, ProjectInput, ProjectRepository } from '@/core/projects/domain';
 import { createAgentRunsIpcHandlers } from '../register-agent-runs-ipc';
 
 class FakeProjectRepository implements ProjectRepository {

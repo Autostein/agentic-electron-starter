@@ -3,13 +3,13 @@ import type {
   AgentRunCommitDetail,
   AgentRunCommitFileDiff,
   AgentRunCommitSummary,
-} from '../../../application/use-cases/agent-runs/commit-read-models';
-import type { GitCommitReadService } from '../../../application/use-cases/agent-runs/ports/git-commit-read-service';
+} from '@/core/agent-runs/application/read-models/commit-diff';
+import type { GitCommitReadService } from '@/core/agent-runs/application/ports/git-commit-read-service';
 import type {
   GetCommitDetailInput,
   GetCommitFileDiffInput,
   GetCommitSummaryInput,
-} from '../../../domain/agent-runs';
+} from '@/core/agent-runs/domain';
 import {
   parseNumstat,
   parseUnifiedDiff,

@@ -7,7 +7,7 @@ import type {
   DockerImageBuildResult,
   DockerImageStatus,
   UpdateAgentRuntimeSettings,
-} from '../../../../domain/agent-runtime';
+} from '@/core/agent-runtime/domain';
 import { createAgentRuntimeIpcHandlers } from '../register-agent-runtime-ipc';
 
 class FakeSettingsRepository implements AgentRuntimeSettingsRepository {

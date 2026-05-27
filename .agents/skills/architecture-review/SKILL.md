@@ -21,7 +21,7 @@ pnpm test
 - Renderer imports no Electron, Node, preload, main, or privileged infrastructure.
 - Preload exposes typed wrappers only and no raw IPC.
 - IPC contracts contain schemas/channels/DTOs only.
-- Domain/application stay runtime-free.
+- Core domain/application stay runtime-free.
 - Sandcastle imports stay in the utility-process worker path.
 - Main/infrastructure adapters do not import renderer code.
 - New IPC capabilities validate inputs and have tests.

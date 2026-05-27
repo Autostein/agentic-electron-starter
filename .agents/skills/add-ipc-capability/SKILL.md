@@ -9,8 +9,8 @@ Use this workflow when renderer code needs a new desktop capability.
 
 ## Steps
 
-1. Add or update a Zod contract in `src/infrastructure/ipc`.
-2. Add or update the domain port and application use-case.
+1. Add or update a Zod contract in `src/contracts/ipc`.
+2. Add or update the domain port and application use-case under `src/core/<capability>`.
 3. Implement the privileged adapter in `src/infrastructure/main` if needed.
 4. Add a main IPC handler in `src/electron/main/ipc` that validates input and delegates to a use-case.
 5. Add the method to `DesktopApi` and map it in `src/electron/preload/preload.ts`.

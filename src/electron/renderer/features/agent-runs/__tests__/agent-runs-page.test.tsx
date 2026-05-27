@@ -3,7 +3,7 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import type { DesktopApi } from '../../../../../infrastructure/ipc/shared/desktop-api';
+import type { DesktopApi } from '@/contracts/ipc/shared/desktop-api';
 import { renderWithQuery } from '../../../shared/testing/render-with-query';
 import { NewAgentRunPage } from '../ui/NewAgentRunPage';
 import { AgentRunsPage } from '../ui/AgentRunsPage';

@@ -4,7 +4,7 @@ import type {
   AgentRuntimeSettings,
   AgentRuntimeSettingsRepository,
   UpdateAgentRuntimeSettings,
-} from '../../../domain/agent-runtime';
+} from '@/core/agent-runtime/domain';
 import { getMainDatabase } from './db/client';
 
 const SETTINGS_ID = 'default';

@@ -5,7 +5,7 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/electron/renderer' },
       to: {
-        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|src/electron/(main|preload)|src/infrastructure/main)',
+        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|src/(core|electron/(main|preload)|infrastructure/main))',
       },
     },
     {
@@ -13,23 +13,23 @@ module.exports = {
       severity: 'error',
       from: { path: '^src/electron/preload' },
       to: {
-        path: '^(@ai-hero/sandcastle|src/(domain|application|infrastructure/main|electron/main|electron/renderer))',
+        path: '^(@ai-hero/sandcastle|src/(core|infrastructure/main|electron/main|electron/renderer))',
       },
     },
     {
       name: 'ipc-contracts-are-runtime-free',
       severity: 'error',
-      from: { path: '^src/infrastructure/ipc' },
+      from: { path: '^src/contracts/ipc' },
       to: {
-        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|src/(domain|application|infrastructure/main|electron))',
+        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|src/(core|infrastructure|electron))',
       },
     },
     {
-      name: 'domain-and-application-are-runtime-free',
+      name: 'core-is-runtime-free',
       severity: 'error',
-      from: { path: '^src/(domain|application)' },
+      from: { path: '^src/core' },
       to: {
-        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|react$|react-dom$|src/(electron|infrastructure))',
+        path: '^(@ai-hero/sandcastle|electron|node:|fs$|path$|crypto$|os$|child_process$|react$|react-dom$|src/(contracts|electron|infrastructure))',
       },
     },
     {

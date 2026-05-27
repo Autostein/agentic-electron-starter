@@ -1,4 +1,4 @@
-import type { UpdateAgentRuntimeSettingsInput } from '../../../../../infrastructure/ipc/agent-runtime.contract';
+import type { UpdateAgentRuntimeSettingsInput } from '@/contracts/ipc/agent-runtime.contract';
 
 export function getAgentRuntimeSettings() {
   return window.desktop.agentRuntime.getSettings();

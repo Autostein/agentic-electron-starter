@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { DockerImageBuildEventResult } from '../../../../../infrastructure/ipc/agent-runtime.contract';
+import type { DockerImageBuildEventResult } from '@/contracts/ipc/agent-runtime.contract';
 import {
   buildAgentRuntimeImage,
   getAgentRuntimeImageStatus,

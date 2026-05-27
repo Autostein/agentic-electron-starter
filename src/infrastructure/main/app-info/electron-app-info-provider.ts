@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import type { AppInfo, AppInfoProvider } from '../../../domain/app-info';
+import type { AppInfo, AppInfoProvider } from '@/core/app-info/domain';
 
 export class ElectronAppInfoProvider implements AppInfoProvider {
   getAppInfo(): AppInfo {

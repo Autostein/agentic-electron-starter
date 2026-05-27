@@ -6,7 +6,7 @@ import type {
   ListAgentRunsInput,
   StartAgentRunInput,
   WatchAgentRunInput,
-} from '../../../../../infrastructure/ipc/agent-runs.contract';
+} from '@/contracts/ipc/agent-runs.contract';
 
 export function startAgentRun(input: StartAgentRunInput) {
   return window.desktop.agentRuns.start(input);

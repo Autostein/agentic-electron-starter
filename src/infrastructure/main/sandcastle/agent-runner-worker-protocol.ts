@@ -1,5 +1,5 @@
-import type { AgentRuntimeSettings } from '../../../domain/agent-runtime';
-import type { AgentRun, AgentRunEventType, AgentRunStatus } from '../../../domain/agent-runs';
+import type { AgentRuntimeSettings } from '@/core/agent-runtime/domain';
+import type { AgentRun, AgentRunEventType, AgentRunStatus } from '@/core/agent-runs/domain';
 
 export type AgentRunnerWorkerStartMessage = {
   type: 'start';

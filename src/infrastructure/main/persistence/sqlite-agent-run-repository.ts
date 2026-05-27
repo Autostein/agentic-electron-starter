@@ -6,8 +6,8 @@ import type {
   AgentRunRepository,
   AgentRunStatus,
   CreateAgentRunInput,
-} from '../../../domain/agent-runs';
-import type { AgentProviderId } from '../../../domain/agent-runtime';
+} from '@/core/agent-runs/domain';
+import type { AgentProviderId } from '@/core/agent-runtime/domain';
 import { getMainDatabase } from './db/client';
 
 export class SQLiteAgentRunRepository implements AgentRunRepository {

@@ -2,15 +2,15 @@ import { contextBridge, ipcRenderer } from 'electron';
 import {
   AGENT_RUNS_IPC_CHANNELS,
   AgentRunEventSchema,
-} from '../../infrastructure/ipc/agent-runs.contract';
+} from '@/contracts/ipc/agent-runs.contract';
 import {
   AGENT_RUNTIME_IPC_CHANNELS,
   DockerImageBuildEventSchema,
-} from '../../infrastructure/ipc/agent-runtime.contract';
-import { APP_INFO_IPC_CHANNELS } from '../../infrastructure/ipc/app-info.contract';
-import { NOTES_IPC_CHANNELS } from '../../infrastructure/ipc/notes.contract';
-import { PROJECTS_IPC_CHANNELS } from '../../infrastructure/ipc/projects.contract';
-import type { DesktopApi } from '../../infrastructure/ipc/shared/desktop-api';
+} from '@/contracts/ipc/agent-runtime.contract';
+import { APP_INFO_IPC_CHANNELS } from '@/contracts/ipc/app-info.contract';
+import { NOTES_IPC_CHANNELS } from '@/contracts/ipc/notes.contract';
+import { PROJECTS_IPC_CHANNELS } from '@/contracts/ipc/projects.contract';
+import type { DesktopApi } from '@/contracts/ipc/shared/desktop-api';
 
 const desktopApi: DesktopApi = {
   appInfo: {

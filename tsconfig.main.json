@@ -5,8 +5,8 @@
     "types": ["node", "electron"]
   },
   "include": [
-    "src/domain/**/*.ts",
-    "src/application/**/*.ts",
+    "src/core/**/*.ts",
+    "src/contracts/ipc/**/*.ts",
     "src/infrastructure/**/*.ts",
     "src/electron/main/**/*.ts",
     "forge.env.d.ts",

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { StartAgentRunInput } from '../../../../../infrastructure/ipc/agent-runs.contract';
+import type { StartAgentRunInput } from '@/contracts/ipc/agent-runs.contract';
 import {
   cancelAgentRun,
   getAgentRunCommitDetails,

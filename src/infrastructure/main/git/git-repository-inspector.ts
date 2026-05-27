@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import path from 'node:path';
-import type { GitRepositoryInfo, GitRepositoryInspector } from '../../../domain/projects';
+import type { GitRepositoryInfo, GitRepositoryInspector } from '@/core/projects/domain';
 
 export class LocalGitRepositoryInspector implements GitRepositoryInspector {
   async inspect(repoPath: string): Promise<GitRepositoryInfo> {

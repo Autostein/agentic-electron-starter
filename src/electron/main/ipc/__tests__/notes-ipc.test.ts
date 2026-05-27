@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { CreateNoteRecord, Note, NoteRepository } from '../../../../domain/notes';
+import type { CreateNoteRecord, Note, NoteRepository } from '@/core/notes/domain';
 import { createNotesIpcHandlers } from '../register-notes-ipc';
 
 class FakeNoteRepository implements NoteRepository {

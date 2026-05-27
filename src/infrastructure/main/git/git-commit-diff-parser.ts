@@ -1,7 +1,7 @@
 import type {
   AgentRunCommitFileDiff,
   AgentRunDiffHunk,
-} from '../../../application/use-cases/agent-runs/commit-read-models';
+} from '@/core/agent-runs/application/read-models/commit-diff';
 
 export type ParsedNumstat = {
   filesChanged: number;

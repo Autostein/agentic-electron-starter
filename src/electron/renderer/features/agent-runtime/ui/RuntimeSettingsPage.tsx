@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Save } from 'lucide-react';
-import type { AgentRuntimeSettingsResult } from '../../../../../infrastructure/ipc/agent-runtime.contract';
+import type { AgentRuntimeSettingsResult } from '@/contracts/ipc/agent-runtime.contract';
 import {
   useAgentRuntimeImageStatus,
   useAgentRuntimeSettings,

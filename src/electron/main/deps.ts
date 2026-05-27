@@ -1,14 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { ElectronAppInfoProvider } from '../../infrastructure/main/app-info/electron-app-info-provider';
-import { LocalGitCommitInspector } from '../../infrastructure/main/git/git-commit-inspector';
-import { LocalGitRepositoryInspector } from '../../infrastructure/main/git/git-repository-inspector';
-import { SQLiteAgentRunRepository } from '../../infrastructure/main/persistence/sqlite-agent-run-repository';
-import { SQLiteAgentRuntimeSettingsRepository } from '../../infrastructure/main/persistence/sqlite-agent-runtime-settings-repository';
-import { SQLiteNoteRepository } from '../../infrastructure/main/persistence/sqlite-note-repository';
-import { SQLiteProjectRepository } from '../../infrastructure/main/persistence/sqlite-project-repository';
-import { LocalDockerImageBuilder } from '../../infrastructure/main/sandcastle/docker-image-builder';
-import { UtilityProcessAgentRunner } from '../../infrastructure/main/sandcastle/utility-process-agent-runner';
+import { ElectronAppInfoProvider } from '@/infrastructure/main/app-info/electron-app-info-provider';
+import { LocalGitCommitInspector } from '@/infrastructure/main/git/git-commit-inspector';
+import { LocalGitRepositoryInspector } from '@/infrastructure/main/git/git-repository-inspector';
+import { SQLiteAgentRunRepository } from '@/infrastructure/main/persistence/sqlite-agent-run-repository';
+import { SQLiteAgentRuntimeSettingsRepository } from '@/infrastructure/main/persistence/sqlite-agent-runtime-settings-repository';
+import { SQLiteNoteRepository } from '@/infrastructure/main/persistence/sqlite-note-repository';
+import { SQLiteProjectRepository } from '@/infrastructure/main/persistence/sqlite-project-repository';
+import { LocalDockerImageBuilder } from '@/infrastructure/main/sandcastle/docker-image-builder';
+import { UtilityProcessAgentRunner } from '@/infrastructure/main/sandcastle/utility-process-agent-runner';
 
 export type MainProcessDepsOptions = {
   userDataPath: string;

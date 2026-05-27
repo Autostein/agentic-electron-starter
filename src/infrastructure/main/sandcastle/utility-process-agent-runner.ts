@@ -4,7 +4,7 @@ import type {
   AgentRunner,
   AgentRunnerCallbacks,
   StartAgentRunnerInput,
-} from '../../../domain/agent-runs';
+} from '@/core/agent-runs/domain';
 import type {
   AgentRunnerWorkerMessage,
   AgentRunnerWorkerOutboundMessage,

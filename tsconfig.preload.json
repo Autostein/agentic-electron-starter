@@ -5,7 +5,7 @@
     "types": ["electron"]
   },
   "include": [
-    "src/infrastructure/ipc/**/*.ts",
+    "src/contracts/ipc/**/*.ts",
     "src/electron/preload/**/*.ts",
     "forge.env.d.ts",
     "vite.preload.config.ts"

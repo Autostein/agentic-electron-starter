@@ -2,7 +2,7 @@ import type { FormEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { FolderOpen, Play } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import type { AgentProviderResult } from '../../../../../infrastructure/ipc/agent-runs.contract';
+import type { AgentProviderResult } from '@/contracts/ipc/agent-runs.contract';
 import {
   useAgentRuntimeImageStatus,
   useAgentRuntimeSettings,

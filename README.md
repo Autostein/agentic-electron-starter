@@ -39,9 +39,8 @@ Electron 42 downloads its binary lazily. App scripts run `pnpm ensure:electron` 
 
 ```text
 src/
-  domain/                 Pure entities and ports
-  application/use-cases/  Business orchestration
-  infrastructure/ipc/     IPC channels, schemas, DTOs
+  core/                   Capability slices with domain and application code
+  contracts/ipc/          IPC channels, schemas, DTOs
   infrastructure/main/    SQLite and privileged adapters
   electron/main/          Electron lifecycle and IPC registration
   electron/preload/       Typed contextBridge API
@@ -58,7 +57,7 @@ renderer route
   -> window.desktop.agentRuns
   -> Zod IPC contract
   -> Electron main IPC handler
-  -> application use-case
+  -> core application use-case
   -> SQLite run repository
   -> utility-process Sandcastle worker
   -> Docker sandbox

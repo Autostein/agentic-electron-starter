@@ -13,7 +13,7 @@ import type {
   AgentRunnerWorkerMessage,
   AgentRunnerWorkerOutboundMessage,
   AgentRunnerWorkerStartMessage,
-} from '../../infrastructure/main/sandcastle/agent-runner-worker-protocol';
+} from '@/infrastructure/main/sandcastle/agent-runner-worker-protocol';
 
 let abortController: AbortController | null = null;
 

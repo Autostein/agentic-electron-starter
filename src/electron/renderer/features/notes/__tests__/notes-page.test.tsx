@@ -2,7 +2,7 @@
 
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { DesktopApi } from '../../../../../infrastructure/ipc/shared/desktop-api';
+import type { DesktopApi } from '@/contracts/ipc/shared/desktop-api';
 import { renderWithQuery } from '../../../shared/testing/render-with-query';
 import { NotesPage } from '../ui/NotesPage';
 
