@@ -17,10 +17,12 @@ import type {
   AgentRunner,
 } from '@/core/agent-runs/domain';
 import type {
-  AgentRuntimeSettingsRepository,
+  AgentProviderId,
+  AgentRuntimeProfile,
+  AgentRuntimeProfileRepository,
   DockerImageBuilder,
 } from '@/core/agent-runtime/domain';
-import type { ProjectRepository } from '@/core/projects/domain';
+import type { WorkspaceRepository } from '@/core/workspaces/domain';
 import {
   AGENT_RUNS_IPC_CHANNELS,
   AgentRunCommitDetailSchema,
@@ -42,9 +44,13 @@ export type AgentRunsIpcDeps = {
   agentRunRepository: AgentRunRepository;
   agentRunner: AgentRunner;
   gitCommitReadService: GitCommitReadService;
-  projectRepository: ProjectRepository;
-  settingsRepository: AgentRuntimeSettingsRepository;
+  workspaceRepository: WorkspaceRepository;
+  profileRepository: AgentRuntimeProfileRepository;
   dockerImageBuilder: DockerImageBuilder;
+  validateRuntimeProfile: (
+    profile: AgentRuntimeProfile,
+    provider: AgentProviderId,
+  ) => void | Promise<void>;
   createLogFilePath: (runId: string) => string;
   publishEvent: (event: AgentRunEvent) => void;
   now: () => number;
@@ -57,9 +63,10 @@ export function createAgentRunsIpcHandlers(deps: AgentRunsIpcDeps) {
       const run = await startAgentRun(input, {
         agentRunRepository: deps.agentRunRepository,
         agentRunner: deps.agentRunner,
-        projectRepository: deps.projectRepository,
-        settingsRepository: deps.settingsRepository,
+        workspaceRepository: deps.workspaceRepository,
+        profileRepository: deps.profileRepository,
         dockerImageBuilder: deps.dockerImageBuilder,
+        validateRuntimeProfile: deps.validateRuntimeProfile,
         createId: randomUUID,
         createLogFilePath: deps.createLogFilePath,
         publishEvent: deps.publishEvent,

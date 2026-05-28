@@ -38,7 +38,7 @@ export function AgentRunsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <Bot aria-hidden="true" className="h-4 w-4 text-emerald-300" />
-                <h3 className="font-medium text-zinc-100">{run.projectName}</h3>
+                <h3 className="font-medium text-zinc-100">{run.workspaceName}</h3>
               </div>
               <p className="mt-2 line-clamp-2 text-sm text-zinc-300">{run.prompt}</p>
               <p className="mt-2 text-xs text-zinc-500">{run.branchName}</p>

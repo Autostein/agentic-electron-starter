@@ -1,13 +1,21 @@
 export type {
   AgentProviderId,
-  AgentRuntimeSettings,
+  AgentRuntimeProfile,
+  AgentRuntimeProfileSourceKind,
+  CreateAgentRuntimeProfile,
   DockerImageBuildEvent,
   DockerImageStatus,
-  UpdateAgentRuntimeSettings,
-} from './entities/agent-runtime-settings';
+  UpdateAgentRuntimeProfile,
+} from './entities/agent-runtime-profile';
+export {
+  DEFAULT_CLAUDE_MODEL,
+  DEFAULT_CODEX_MODEL,
+  STARTER_RUNTIME_PROFILE_ID,
+  toRuntimeProfileImageName,
+} from './entities/agent-runtime-profile';
 export type {
-  AgentRuntimeSettingsRepository,
-} from './ports/agent-runtime-settings-repository';
+  AgentRuntimeProfileRepository,
+} from './ports/agent-runtime-profile-repository';
 export type {
   BuildDockerImageInput,
   DockerImageBuilder,

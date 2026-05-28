@@ -7,12 +7,28 @@ import type {
 type SandboxImagePanelProps = {
   status: ReturnType<typeof useAgentRuntimeImageStatus>;
   buildImage: ReturnType<typeof useBuildAgentRuntimeImage>;
+  dockerfileDirty?: boolean;
+  onBeforeBuild?: () => Promise<boolean> | boolean;
 };
 
-export function SandboxImagePanel({ status, buildImage }: SandboxImagePanelProps) {
+export function SandboxImagePanel({
+  status,
+  buildImage,
+  dockerfileDirty = false,
+  onBeforeBuild,
+}: SandboxImagePanelProps) {
   const available = status.data?.available === true;
   const unavailable = status.data?.available === false || Boolean(status.error);
   const statusText = toStatusText(status);
+  const buildButtonLabel = dockerfileDirty ? 'Save & Build image' : 'Build image';
+
+  const build = async () => {
+    if (onBeforeBuild && !(await onBeforeBuild())) {
+      return;
+    }
+
+    buildImage.mutation.mutate();
+  };
 
   return (
     <section className="rounded-md border border-zinc-800 bg-zinc-950/60 p-4">
@@ -35,12 +51,12 @@ export function SandboxImagePanel({ status, buildImage }: SandboxImagePanelProps
           </button>
           <button
             type="button"
-            onClick={() => buildImage.mutation.mutate()}
+            onClick={() => void build()}
             disabled={buildImage.mutation.isPending}
             className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-100 hover:bg-zinc-800 disabled:opacity-50"
           >
             <Hammer aria-hidden="true" className="h-4 w-4" />
-            Build image
+            {buildButtonLabel}
           </button>
         </div>
       </div>

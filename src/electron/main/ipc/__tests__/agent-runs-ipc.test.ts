@@ -15,55 +15,69 @@ import type {
   AgentRunner,
 } from '@/core/agent-runs/domain';
 import type {
-  AgentRuntimeSettings,
-  AgentRuntimeSettingsRepository,
+  AgentRuntimeProfile,
+  AgentRuntimeProfileRepository,
+  BuildDockerImageInput,
   DockerImageBuildEvent,
   DockerImageBuilder,
   DockerImageBuildResult,
   DockerImageStatus,
 } from '@/core/agent-runtime/domain';
-import type { Project, ProjectInput, ProjectRepository } from '@/core/projects/domain';
+import type { Workspace, WorkspaceInput, WorkspaceRepository } from '@/core/workspaces/domain';
 import { createAgentRunsIpcHandlers } from '../register-agent-runs-ipc';
 
-class FakeProjectRepository implements ProjectRepository {
-  project: Project = {
-    id: 'project-1',
+class FakeWorkspaceRepository implements WorkspaceRepository {
+  workspace: Workspace = {
+    id: 'workspace-1',
     path: '/repo',
     name: 'repo',
     currentBranch: 'main',
-    createdAt: 1,
+      createdAt: 1,
     updatedAt: 1,
   };
 
-  async listProjects(): Promise<Project[]> {
-    return [this.project];
+  async listWorkspaces(): Promise<Workspace[]> {
+    return [this.workspace];
   }
 
-  async getProject(id: string): Promise<Project | null> {
-    return id === this.project.id ? this.project : null;
+  async getWorkspace(id: string): Promise<Workspace | null> {
+    return id === this.workspace.id ? this.workspace : null;
   }
 
-  async upsertProject(input: ProjectInput): Promise<Project> {
-    return { ...this.project, ...input };
+  async upsertWorkspace(input: WorkspaceInput): Promise<Workspace> {
+    return { ...this.workspace, ...input };
   }
 }
 
-class FakeSettingsRepository implements AgentRuntimeSettingsRepository {
-  async getSettings(): Promise<AgentRuntimeSettings> {
-    return {
-      dockerImageName: 'agentic:test',
-      claudeDefaultModel: 'claude-opus-4-7',
-      codexDefaultModel: 'gpt-5.4',
-      claudeAuthMountEnabled: true,
-      claudeAuthHostPath: '/home/me/.claude',
-      codexAuthMountEnabled: true,
-      codexAuthHostPath: '/home/me/.codex',
-      updatedAt: 1,
-    };
+class FakeProfileRepository implements AgentRuntimeProfileRepository {
+  profile: AgentRuntimeProfile = {
+    id: 'profile-1',
+    name: 'Starter',
+    sourceKind: 'bundled-starter',
+    profilePath: null,
+    imageName: 'agentic:test',
+    claudeDefaultModel: 'claude-opus-4-7',
+    codexDefaultModel: 'gpt-5.4',
+    claudeAuthMountEnabled: false,
+    codexAuthMountEnabled: false,
+      createdAt: 1,
+    updatedAt: 1,
+  };
+
+  async listProfiles(): Promise<AgentRuntimeProfile[]> {
+    return [this.profile];
   }
 
-  async updateSettings(): Promise<AgentRuntimeSettings> {
-    return this.getSettings();
+  async getProfile(id: string): Promise<AgentRuntimeProfile | null> {
+    return id === this.profile.id ? this.profile : null;
+  }
+
+  async createProfile(): Promise<AgentRuntimeProfile> {
+    return this.profile;
+  }
+
+  async updateProfile(): Promise<AgentRuntimeProfile> {
+    return this.profile;
   }
 }
 
@@ -133,7 +147,7 @@ class FakeRunner implements AgentRunner {
 class FakeDockerImageBuilder implements DockerImageBuilder {
   available = true;
 
-  async getImageStatus(input: { imageName: string }, checkedAt: number): Promise<DockerImageStatus> {
+  async getImageStatus(input: BuildDockerImageInput, checkedAt: number): Promise<DockerImageStatus> {
     return {
       imageName: input.imageName,
       available: this.available,
@@ -143,7 +157,7 @@ class FakeDockerImageBuilder implements DockerImageBuilder {
   }
 
   async buildImage(
-    input: { imageName: string },
+    input: BuildDockerImageInput,
     _onEvent: (event: DockerImageBuildEvent) => void,
   ): Promise<DockerImageBuildResult> {
     return { imageName: input.imageName, succeeded: true };
@@ -209,8 +223,9 @@ describe('agent run IPC handlers', () => {
       agentRunRepository: new FakeRunRepository(),
       agentRunner: runner,
       gitCommitReadService: new FakeGitCommitReadService(),
-      projectRepository: new FakeProjectRepository(),
-      settingsRepository: new FakeSettingsRepository(),
+      workspaceRepository: new FakeWorkspaceRepository(),
+      profileRepository: new FakeProfileRepository(),
+      validateRuntimeProfile: () => undefined,
       dockerImageBuilder: new FakeDockerImageBuilder(),
       createLogFilePath: (runId) => `/logs/${runId}.log`,
       publishEvent: () => undefined,
@@ -218,7 +233,8 @@ describe('agent run IPC handlers', () => {
     });
 
     const run = await handlers.start(null, {
-      projectId: 'project-1',
+      workspaceId: 'workspace-1',
+      runtimeProfileId: 'profile-1',
       provider: 'codex',
       model: 'gpt-5.4',
       prompt: 'Implement it',
@@ -233,8 +249,9 @@ describe('agent run IPC handlers', () => {
       agentRunRepository: new FakeRunRepository(),
       agentRunner: new FakeRunner(),
       gitCommitReadService: new FakeGitCommitReadService(),
-      projectRepository: new FakeProjectRepository(),
-      settingsRepository: new FakeSettingsRepository(),
+      workspaceRepository: new FakeWorkspaceRepository(),
+      profileRepository: new FakeProfileRepository(),
+      validateRuntimeProfile: () => undefined,
       dockerImageBuilder: new FakeDockerImageBuilder(),
       createLogFilePath: (runId) => `/logs/${runId}.log`,
       publishEvent: () => undefined,
@@ -243,7 +260,8 @@ describe('agent run IPC handlers', () => {
 
     await expect(
       handlers.start(null, {
-        projectId: 'project-1',
+        workspaceId: 'workspace-1',
+        runtimeProfileId: 'profile-1',
         provider: 'bad-provider',
         model: 'model',
         prompt: 'Prompt',
@@ -260,8 +278,9 @@ describe('agent run IPC handlers', () => {
       agentRunRepository: runRepository,
       agentRunner: runner,
       gitCommitReadService: new FakeGitCommitReadService(),
-      projectRepository: new FakeProjectRepository(),
-      settingsRepository: new FakeSettingsRepository(),
+      workspaceRepository: new FakeWorkspaceRepository(),
+      profileRepository: new FakeProfileRepository(),
+      validateRuntimeProfile: () => undefined,
       dockerImageBuilder,
       createLogFilePath: (runId) => `/logs/${runId}.log`,
       publishEvent: () => undefined,
@@ -270,7 +289,8 @@ describe('agent run IPC handlers', () => {
 
     await expect(
       handlers.start(null, {
-        projectId: 'project-1',
+        workspaceId: 'workspace-1',
+        runtimeProfileId: 'profile-1',
         provider: 'codex',
         model: 'gpt-5.4',
         prompt: 'Implement it',
@@ -285,9 +305,12 @@ describe('agent run IPC handlers', () => {
     const runRepository = new FakeRunRepository();
     runRepository.runs.set('run-1', {
       id: 'run-1',
-      projectId: 'project-1',
-      projectPath: '/repo',
-      projectName: 'repo',
+      workspaceId: 'workspace-1',
+      workspacePath: '/repo',
+      workspaceName: 'repo',
+      runtimeProfileId: 'profile-1',
+      runtimeProfileName: 'Starter',
+      runtimeImageName: 'agentic:test',
       provider: 'codex',
       model: 'gpt-5.4',
       prompt: 'Prompt',
@@ -295,7 +318,7 @@ describe('agent run IPC handlers', () => {
       status: 'succeeded',
       branchName: 'agentic/run-1',
       logFilePath: '/logs/run-1.log',
-      createdAt: 1,
+    createdAt: 1,
       startedAt: 2,
       finishedAt: 3,
       errorMessage: null,
@@ -305,8 +328,9 @@ describe('agent run IPC handlers', () => {
       agentRunRepository: runRepository,
       agentRunner: new FakeRunner(),
       gitCommitReadService: new FakeGitCommitReadService(),
-      projectRepository: new FakeProjectRepository(),
-      settingsRepository: new FakeSettingsRepository(),
+      workspaceRepository: new FakeWorkspaceRepository(),
+      profileRepository: new FakeProfileRepository(),
+      validateRuntimeProfile: () => undefined,
       dockerImageBuilder: new FakeDockerImageBuilder(),
       createLogFilePath: (runId) => `/logs/${runId}.log`,
       publishEvent: () => undefined,
@@ -327,9 +351,12 @@ describe('agent run IPC handlers', () => {
     const runRepository = new FakeRunRepository();
     runRepository.runs.set('run-1', {
       id: 'run-1',
-      projectId: 'project-1',
-      projectPath: '/repo',
-      projectName: 'repo',
+      workspaceId: 'workspace-1',
+      workspacePath: '/repo',
+      workspaceName: 'repo',
+      runtimeProfileId: 'profile-1',
+      runtimeProfileName: 'Starter',
+      runtimeImageName: 'agentic:test',
       provider: 'codex',
       model: 'gpt-5.4',
       prompt: 'Prompt',
@@ -337,7 +364,7 @@ describe('agent run IPC handlers', () => {
       status: 'succeeded',
       branchName: 'agentic/run-1',
       logFilePath: '/logs/run-1.log',
-      createdAt: 1,
+    createdAt: 1,
       startedAt: 2,
       finishedAt: 3,
       errorMessage: null,
@@ -346,8 +373,9 @@ describe('agent run IPC handlers', () => {
       agentRunRepository: runRepository,
       agentRunner: new FakeRunner(),
       gitCommitReadService: new FakeGitCommitReadService(),
-      projectRepository: new FakeProjectRepository(),
-      settingsRepository: new FakeSettingsRepository(),
+      workspaceRepository: new FakeWorkspaceRepository(),
+      profileRepository: new FakeProfileRepository(),
+      validateRuntimeProfile: () => undefined,
       dockerImageBuilder: new FakeDockerImageBuilder(),
       createLogFilePath: (runId) => `/logs/${runId}.log`,
       publishEvent: () => undefined,

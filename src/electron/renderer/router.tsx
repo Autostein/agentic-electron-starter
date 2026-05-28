@@ -2,12 +2,15 @@ import { createHashRouter } from 'react-router';
 import { AgentRunDetailRoute } from './routes/AgentRunDetailRoute';
 import { AgentRunsRoute } from './routes/AgentRunsRoute';
 import { AppShell } from './routes/AppShell';
+import { ConfigurationRoute } from './routes/ConfigurationRoute';
 import { HomeRoute } from './routes/HomeRoute';
 import { NewAgentRunRoute } from './routes/NewAgentRunRoute';
 import { NotesRoute } from './routes/NotesRoute';
-import { ProjectsRoute } from './routes/ProjectsRoute';
+import {
+  RuntimeConfigurationRedirectRoute,
+  WorkspaceConfigurationRedirectRoute,
+} from './routes/ConfigurationRedirectRoutes';
 import { RouteError } from './routes/RouteError';
-import { SettingsRoute } from './routes/SettingsRoute';
 
 export const router = createHashRouter([
   {
@@ -19,9 +22,10 @@ export const router = createHashRouter([
       { path: 'runs', element: <AgentRunsRoute /> },
       { path: 'runs/new', element: <NewAgentRunRoute /> },
       { path: 'runs/:runId', element: <AgentRunDetailRoute /> },
-      { path: 'projects', element: <ProjectsRoute /> },
+      { path: 'configuration', element: <ConfigurationRoute /> },
+      { path: 'projects', element: <WorkspaceConfigurationRedirectRoute /> },
+      { path: 'settings', element: <RuntimeConfigurationRedirectRoute /> },
       { path: 'notes', element: <NotesRoute /> },
-      { path: 'settings', element: <SettingsRoute /> },
     ],
   },
 ]);

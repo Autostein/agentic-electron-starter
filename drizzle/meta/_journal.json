@@ -15,6 +15,20 @@
       "when": 1779908339965,
       "tag": "0001_married_the_executioner",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779984000000,
+      "tag": "0002_runtime_profiles",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1779985000000,
+      "tag": "0003_workspaces",
+      "breakpoints": true
     }
   ]
 }

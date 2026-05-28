@@ -6,12 +6,13 @@ import type { DockerImageBuildEvent } from '@/core/agent-runtime/domain';
 import { AGENT_RUNS_IPC_CHANNELS } from '@/contracts/ipc/agent-runs.contract';
 import { AGENT_RUNTIME_IPC_CHANNELS } from '@/contracts/ipc/agent-runtime.contract';
 import { closeMainDatabase, initializeMainDatabase } from '@/infrastructure/main/persistence/db/client';
+import { assertRuntimeProfileAuthAvailable } from '@/infrastructure/main/agent-runtime/cli-auth-paths';
 import { createMainProcessDeps } from './deps';
 import { registerAgentRunsIpcHandlers } from './ipc/register-agent-runs-ipc';
 import { registerAgentRuntimeIpcHandlers } from './ipc/register-agent-runtime-ipc';
 import { registerAppInfoIpcHandlers } from './ipc/register-app-info-ipc';
 import { registerNotesIpcHandlers } from './ipc/register-notes-ipc';
-import { registerProjectsIpcHandlers } from './ipc/register-projects-ipc';
+import { registerWorkspacesIpcHandlers } from './ipc/register-workspaces-ipc';
 import { getErrorMessage } from './shared/errors';
 import { createMainWindow } from './window';
 
@@ -35,15 +36,18 @@ app.whenReady()
     });
     registerAppInfoIpcHandlers({ appInfoProvider: deps.appInfoProvider });
     registerNotesIpcHandlers({ noteRepository: deps.noteRepository });
-    registerProjectsIpcHandlers({
+    registerWorkspacesIpcHandlers({
       gitRepositoryInspector: deps.gitRepositoryInspector,
-      projectRepository: deps.projectRepository,
+      workspaceRepository: deps.workspaceRepository,
       pickDirectory,
       now: Date.now,
     });
     registerAgentRuntimeIpcHandlers({
       dockerImageBuilder: deps.dockerImageBuilder,
-      settingsRepository: deps.settingsRepository,
+      profileRepository: deps.profileRepository,
+      copyStarterProfile: (profileId) => deps.runtimeProfileFiles.copyStarterProfile(profileId),
+      runtimeProfileFiles: deps.runtimeProfileFiles,
+      validateRuntimeProfile: assertRuntimeProfileAuthAvailable,
       publishBuildEvent,
       now: Date.now,
     });
@@ -51,9 +55,10 @@ app.whenReady()
       agentRunRepository: deps.agentRunRepository,
       agentRunner: deps.agentRunner,
       gitCommitReadService: deps.gitCommitReadService,
-      projectRepository: deps.projectRepository,
-      settingsRepository: deps.settingsRepository,
+      workspaceRepository: deps.workspaceRepository,
+      profileRepository: deps.profileRepository,
       dockerImageBuilder: deps.dockerImageBuilder,
+      validateRuntimeProfile: assertRuntimeProfileAuthAvailable,
       createLogFilePath: deps.createLogFilePath,
       publishEvent: publishAgentRunEvent,
       now: Date.now,
@@ -96,7 +101,7 @@ function publishAgentRunEvent(event: AgentRunEvent): void {
   }
 }
 
-function publishBuildEvent(event: DockerImageBuildEvent): void {
+function publishBuildEvent(event: DockerImageBuildEvent & { profileId: string }): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(AGENT_RUNTIME_IPC_CHANNELS.buildEvent, event);
   }

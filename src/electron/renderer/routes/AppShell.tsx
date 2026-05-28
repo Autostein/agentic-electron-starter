@@ -1,11 +1,10 @@
-import { Bot, FolderGit2, NotebookText, Settings } from 'lucide-react';
+import { Bot, NotebookText, Settings } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router';
 
 const navItems = [
   { to: '/', label: 'Runs', icon: Bot },
-  { to: '/projects', label: 'Projects', icon: FolderGit2 },
+  { to: '/configuration', label: 'Configuration', icon: Settings },
   { to: '/notes', label: 'Notes sample', icon: NotebookText },
-  { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export function AppShell() {

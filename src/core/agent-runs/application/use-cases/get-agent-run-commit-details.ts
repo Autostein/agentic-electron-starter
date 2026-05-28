@@ -33,7 +33,7 @@ export async function getAgentRunCommitDetails(
   }
 
   return deps.gitCommitReadService.getCommitDetail({
-    repoPath: run.projectPath,
+    repoPath: run.workspacePath,
     runId: run.id,
     sha: input.sha,
     largeFileLineThreshold: LARGE_FILE_LINE_THRESHOLD,

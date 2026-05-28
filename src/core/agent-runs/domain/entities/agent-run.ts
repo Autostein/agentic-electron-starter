@@ -1,12 +1,15 @@
-import type { AgentProviderId, AgentRuntimeSettings } from '@/core/agent-runtime/domain';
+import type { AgentProviderId, AgentRuntimeProfile } from '@/core/agent-runtime/domain';
 
 export type AgentRunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
 export type AgentRun = {
   id: string;
-  projectId: string;
-  projectPath: string;
-  projectName: string;
+  workspaceId: string;
+  workspacePath: string;
+  workspaceName: string;
+  runtimeProfileId: string;
+  runtimeProfileName: string;
+  runtimeImageName: string;
   provider: AgentProviderId;
   model: string;
   prompt: string;
@@ -22,9 +25,12 @@ export type AgentRun = {
 
 export type CreateAgentRunInput = {
   id: string;
-  projectId: string;
-  projectPath: string;
-  projectName: string;
+  workspaceId: string;
+  workspacePath: string;
+  workspaceName: string;
+  runtimeProfileId: string;
+  runtimeProfileName: string;
+  runtimeImageName: string;
   provider: AgentProviderId;
   model: string;
   prompt: string;
@@ -52,7 +58,7 @@ export type AgentRunCommit = {
 
 export type StartAgentRunnerInput = {
   run: AgentRun;
-  settings: AgentRuntimeSettings;
+  profile: AgentRuntimeProfile;
 };
 
 export type AgentRunnerCallbacks = {

@@ -1,7 +1,8 @@
 import type {
   AgentProviderId,
   DockerImageBuilder,
-  AgentRuntimeSettingsRepository,
+  AgentRuntimeProfile,
+  AgentRuntimeProfileRepository,
 } from '@/core/agent-runtime/domain';
 import type {
   AgentRun,
@@ -10,10 +11,11 @@ import type {
   AgentRunStatus,
   AgentRunner,
 } from '../../domain';
-import type { ProjectRepository } from '@/core/projects/domain';
+import type { WorkspaceRepository } from '@/core/workspaces/domain';
 
 export type StartAgentRunInput = {
-  projectId: string;
+  workspaceId: string;
+  runtimeProfileId: string;
   provider: AgentProviderId;
   model: string;
   prompt: string;
@@ -23,9 +25,13 @@ export type StartAgentRunInput = {
 export type StartAgentRunDeps = {
   agentRunRepository: AgentRunRepository;
   agentRunner: AgentRunner;
-  projectRepository: ProjectRepository;
-  settingsRepository: AgentRuntimeSettingsRepository;
+  workspaceRepository: WorkspaceRepository;
+  profileRepository: AgentRuntimeProfileRepository;
   dockerImageBuilder: DockerImageBuilder;
+  validateRuntimeProfile: (
+    profile: AgentRuntimeProfile,
+    provider: AgentProviderId,
+  ) => void | Promise<void>;
   createId: () => string;
   createLogFilePath: (runId: string) => string;
   now: () => number;
@@ -36,15 +42,26 @@ export async function startAgentRun(
   input: StartAgentRunInput,
   deps: StartAgentRunDeps,
 ): Promise<AgentRun> {
-  const project = await deps.projectRepository.getProject(input.projectId);
+  const workspace = await deps.workspaceRepository.getWorkspace(input.workspaceId);
 
-  if (!project) {
-    throw new Error('Project not found.');
+  if (!workspace) {
+    throw new Error('Workspace not found.');
   }
 
-  const settings = await deps.settingsRepository.getSettings();
+  const profile = await deps.profileRepository.getProfile(input.runtimeProfileId);
+
+  if (!profile) {
+    throw new Error('Runtime profile not found.');
+  }
+
+  await deps.validateRuntimeProfile(profile, input.provider);
+
   const imageStatus = await deps.dockerImageBuilder.getImageStatus(
-    { imageName: settings.dockerImageName },
+    {
+      imageName: profile.imageName,
+      sourceKind: profile.sourceKind,
+      profilePath: profile.profilePath,
+    },
     deps.now(),
   );
 
@@ -57,9 +74,12 @@ export async function startAgentRun(
   const branchName = toRunBranchName(runId, input.prompt);
   const run = await deps.agentRunRepository.createRun({
     id: runId,
-    projectId: project.id,
-    projectPath: project.path,
-    projectName: project.name,
+    workspaceId: workspace.id,
+    workspacePath: workspace.path,
+    workspaceName: workspace.name,
+    runtimeProfileId: profile.id,
+    runtimeProfileName: profile.name,
+    runtimeImageName: profile.imageName,
     provider: input.provider,
     model: input.model,
     prompt: input.prompt,
@@ -70,7 +90,7 @@ export async function startAgentRun(
   });
 
   await deps.agentRunner.start(
-    { run, settings },
+    { run, profile },
     {
       onEvent: async (event) => {
         await recordEvent(

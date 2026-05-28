@@ -9,13 +9,27 @@ import { NewAgentRunPage } from '../ui/NewAgentRunPage';
 import { AgentRunsPage } from '../ui/AgentRunsPage';
 import { AgentRunDetailPage } from '../ui/AgentRunDetailPage';
 
+const starterProfile = {
+  id: 'starter',
+  name: 'Starter',
+  sourceKind: 'bundled-starter' as const,
+  profilePath: null,
+  imageName: 'agentic:starter',
+  claudeDefaultModel: 'claude-opus-4-7',
+  codexDefaultModel: 'gpt-5.4',
+  claudeAuthMountEnabled: false,
+  codexAuthMountEnabled: false,
+  createdAt: 1,
+  updatedAt: 1,
+};
+
 describe('AgentRunsPage', () => {
   beforeEach(() => {
     window.desktop = {
       appInfo: {
         get: vi.fn(),
       },
-      projects: {
+      workspaces: {
         pick: vi.fn(),
         list: vi.fn(),
       },
@@ -24,9 +38,12 @@ describe('AgentRunsPage', () => {
         list: vi.fn(async () => [
           {
             id: 'run-1',
-            projectId: 'project-1',
-            projectPath: '/repo',
-            projectName: 'repo',
+            workspaceId: 'workspace-1',
+            workspacePath: '/repo',
+            workspaceName: 'repo',
+            runtimeProfileId: 'starter',
+            runtimeProfileName: 'Starter',
+            runtimeImageName: 'agentic:starter',
             provider: 'codex' as const,
             model: 'gpt-5.4',
             prompt: 'Implement the thing',
@@ -47,8 +64,14 @@ describe('AgentRunsPage', () => {
         onEvent: vi.fn(() => () => undefined),
       },
       agentRuntime: {
-        getSettings: vi.fn(),
-        updateSettings: vi.fn(),
+        listProfiles: vi.fn(async () => [starterProfile]),
+        getProfile: vi.fn(async () => starterProfile),
+        updateProfile: vi.fn(),
+        duplicateStarterProfile: vi.fn(),
+        getProfileDockerfile: vi.fn(),
+        updateProfileDockerfile: vi.fn(),
+        resetProfileDockerfile: vi.fn(),
+        openProfileFolder: vi.fn(),
         getImageStatus: vi.fn(),
         buildImage: vi.fn(),
         onBuildEvent: vi.fn(() => () => undefined),
@@ -74,9 +97,9 @@ describe('AgentRunsPage', () => {
   });
 
   it('blocks new runs until the sandbox image is available', async () => {
-    window.desktop.projects.list = vi.fn(async () => [
+    window.desktop.workspaces.list = vi.fn(async () => [
       {
-        id: 'project-1',
+        id: 'workspace-1',
         path: '/repo',
         name: 'repo',
         currentBranch: 'main',
@@ -84,30 +107,20 @@ describe('AgentRunsPage', () => {
         updatedAt: 100,
       },
     ]);
-    window.desktop.agentRuntime.getSettings = vi.fn(async () => ({
-      dockerImageName: 'agentic:test',
-      claudeDefaultModel: 'claude-opus-4-7',
-      codexDefaultModel: 'gpt-5.4',
-      claudeAuthMountEnabled: true,
-      claudeAuthHostPath: '/home/me/.claude',
-      codexAuthMountEnabled: true,
-      codexAuthHostPath: '/home/me/.codex',
-      updatedAt: 1,
-    }));
     window.desktop.agentRuntime.getImageStatus = vi.fn()
       .mockResolvedValueOnce({
-        imageName: 'agentic:test',
+        imageName: 'agentic:starter',
         available: false,
         checkedAt: 100,
         errorMessage: 'Image not found locally.',
       })
       .mockResolvedValueOnce({
-        imageName: 'agentic:test',
+        imageName: 'agentic:starter',
         available: true,
         checkedAt: 200,
       });
     window.desktop.agentRuntime.buildImage = vi.fn(async () => ({
-      imageName: 'agentic:test',
+      imageName: 'agentic:starter',
       succeeded: true,
     }));
 
@@ -137,9 +150,12 @@ describe('AgentRunsPage', () => {
     window.desktop.agentRuns.get = vi.fn(async () => ({
       run: {
         id: 'run-1',
-        projectId: 'project-1',
-        projectPath: '/repo',
-        projectName: 'repo',
+        workspaceId: 'workspace-1',
+        workspacePath: '/repo',
+        workspaceName: 'repo',
+        runtimeProfileId: 'starter',
+        runtimeProfileName: 'Starter',
+        runtimeImageName: 'agentic:starter',
         provider: 'codex' as const,
         model: 'gpt-5.4',
         prompt: 'Implement the thing',

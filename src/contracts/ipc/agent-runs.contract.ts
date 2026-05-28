@@ -21,7 +21,8 @@ export const AgentRunStatusSchema = z.enum([
 export const AgentRunEventTypeSchema = z.enum(['status', 'log', 'tool', 'commit', 'error']);
 
 export const StartAgentRunInputSchema = z.object({
-  projectId: z.string().min(1),
+  workspaceId: z.string().min(1),
+  runtimeProfileId: z.string().min(1),
   provider: AgentProviderSchema,
   model: z.string().min(1),
   prompt: z.string().min(1),
@@ -29,7 +30,7 @@ export const StartAgentRunInputSchema = z.object({
 });
 
 export const ListAgentRunsInputSchema = z.object({
-  projectId: z.string().min(1).optional(),
+  workspaceId: z.string().min(1).optional(),
 }).optional();
 
 export const GetAgentRunInputSchema = z.object({
@@ -57,9 +58,12 @@ export const GetAgentRunCommitFileDiffInputSchema = z.object({
 
 export const AgentRunResultSchema = z.object({
   id: z.string(),
-  projectId: z.string(),
-  projectPath: z.string(),
-  projectName: z.string(),
+  workspaceId: z.string(),
+  workspacePath: z.string(),
+  workspaceName: z.string(),
+  runtimeProfileId: z.string(),
+  runtimeProfileName: z.string(),
+  runtimeImageName: z.string(),
   provider: AgentProviderSchema,
   model: z.string(),
   prompt: z.string(),

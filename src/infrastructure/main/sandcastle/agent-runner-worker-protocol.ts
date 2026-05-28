@@ -1,11 +1,11 @@
-import type { AgentRuntimeSettings } from '@/core/agent-runtime/domain';
+import type { AgentRuntimeProfile } from '@/core/agent-runtime/domain';
 import type { AgentRun, AgentRunEventType, AgentRunStatus } from '@/core/agent-runs/domain';
 
 export type AgentRunnerWorkerStartMessage = {
   type: 'start';
   payload: {
     run: AgentRun;
-    settings: AgentRuntimeSettings;
+    profile: AgentRuntimeProfile;
     worktreePath: string;
   };
 };

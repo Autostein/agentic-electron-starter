@@ -16,17 +16,21 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
       .prepare(
         `
           INSERT INTO agent_runs (
-            id, project_id, project_path, project_name, provider, model, prompt, max_iterations,
-            status, branch_name, log_file_path, created_at, started_at, finished_at, error_message
+            id, workspace_id, workspace_path, workspace_name, runtime_profile_id, runtime_profile_name,
+            runtime_image_name, provider, model, prompt, max_iterations, status, branch_name,
+            log_file_path, created_at, started_at, finished_at, error_message
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
         `,
       )
       .run(
         input.id,
-        input.projectId,
-        input.projectPath,
-        input.projectName,
+        input.workspaceId,
+        input.workspacePath,
+        input.workspaceName,
+        input.runtimeProfileId,
+        input.runtimeProfileName,
+        input.runtimeImageName,
         input.provider,
         input.model,
         input.prompt,
@@ -52,9 +56,12 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
         `
           SELECT
             id,
-            project_id AS projectId,
-            project_path AS projectPath,
-            project_name AS projectName,
+            workspace_id AS workspaceId,
+            workspace_path AS workspacePath,
+            workspace_name AS workspaceName,
+            runtime_profile_id AS runtimeProfileId,
+            runtime_profile_name AS runtimeProfileName,
+            runtime_image_name AS runtimeImageName,
             provider,
             model,
             prompt,
@@ -75,17 +82,20 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
     return row ? toRun(row) : null;
   }
 
-  async listRuns(projectId?: string): Promise<AgentRun[]> {
+  async listRuns(workspaceId?: string): Promise<AgentRun[]> {
     const db = getMainDatabase();
-    const rows = projectId
+    const rows = workspaceId
       ? db
         .prepare(
           `
             SELECT
               id,
-              project_id AS projectId,
-              project_path AS projectPath,
-              project_name AS projectName,
+              workspace_id AS workspaceId,
+              workspace_path AS workspacePath,
+              workspace_name AS workspaceName,
+              runtime_profile_id AS runtimeProfileId,
+              runtime_profile_name AS runtimeProfileName,
+              runtime_image_name AS runtimeImageName,
               provider,
               model,
               prompt,
@@ -98,19 +108,22 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
               finished_at AS finishedAt,
               error_message AS errorMessage
             FROM agent_runs
-            WHERE project_id = ?
+            WHERE workspace_id = ?
             ORDER BY created_at DESC
           `,
         )
-        .all(projectId)
+        .all(workspaceId)
       : db
         .prepare(
           `
             SELECT
               id,
-              project_id AS projectId,
-              project_path AS projectPath,
-              project_name AS projectName,
+              workspace_id AS workspaceId,
+              workspace_path AS workspacePath,
+              workspace_name AS workspaceName,
+              runtime_profile_id AS runtimeProfileId,
+              runtime_profile_name AS runtimeProfileName,
+              runtime_image_name AS runtimeImageName,
               provider,
               model,
               prompt,
@@ -214,9 +227,12 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
 
 type AgentRunRow = {
   id: string;
-  projectId: string;
-  projectPath: string;
-  projectName: string;
+  workspaceId: string;
+  workspacePath: string;
+  workspaceName: string;
+  runtimeProfileId: string;
+  runtimeProfileName: string;
+  runtimeImageName: string;
   provider: AgentProviderId;
   model: string;
   prompt: string;
@@ -241,9 +257,12 @@ type AgentRunEventRow = {
 function toRun(row: AgentRunRow): AgentRun {
   return {
     id: row.id,
-    projectId: row.projectId,
-    projectPath: row.projectPath,
-    projectName: row.projectName,
+    workspaceId: row.workspaceId,
+    workspacePath: row.workspacePath,
+    workspaceName: row.workspaceName,
+    runtimeProfileId: row.runtimeProfileId,
+    runtimeProfileName: row.runtimeProfileName,
+    runtimeImageName: row.runtimeImageName,
     provider: row.provider,
     model: row.model,
     prompt: row.prompt,

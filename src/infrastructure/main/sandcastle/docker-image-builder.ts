@@ -2,11 +2,13 @@ import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  BuildDockerImageInput,
   DockerImageBuildEvent,
   DockerImageBuilder,
   DockerImageBuildResult,
   DockerImageStatus,
 } from '@/core/agent-runtime/domain';
+import { RuntimeProfileFiles } from '../agent-runtime/runtime-profile-files';
 
 export type LocalDockerImageBuilderOptions = {
   userDataPath: string;
@@ -21,7 +23,7 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
     this.options = options;
   }
 
-  getImageStatus(input: { imageName: string }, checkedAt: number): Promise<DockerImageStatus> {
+  getImageStatus(input: BuildDockerImageInput, checkedAt: number): Promise<DockerImageStatus> {
     return new Promise((resolve) => {
       execFile('docker', ['image', 'inspect', input.imageName], { encoding: 'utf8' }, (error, _stdout, stderr) => {
         if (!error) {
@@ -44,10 +46,10 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
   }
 
   buildImage(
-    input: { imageName: string },
+    input: BuildDockerImageInput,
     onEvent: (event: DockerImageBuildEvent) => void,
   ): Promise<DockerImageBuildResult> {
-    const contextPath = this.prepareBuildContext();
+    const contextPath = this.resolveBuildContext(input);
     const args = [
       'build',
       '--build-arg',
@@ -92,22 +94,25 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
     });
   }
 
-  private prepareBuildContext(): string {
+  private resolveBuildContext(input: BuildDockerImageInput): string {
+    if (input.sourceKind === 'user-managed-copy') {
+      if (!input.profilePath || !fs.existsSync(input.profilePath)) {
+        throw new Error('Runtime profile folder is missing.');
+      }
+
+      return input.profilePath;
+    }
+
     const targetPath = path.join(this.options.userDataPath, 'sandcastle');
+    const files = new RuntimeProfileFiles(this.options);
 
     fs.mkdirSync(targetPath, { recursive: true });
-    fs.cpSync(this.resolveBundledAssetsPath(), targetPath, {
+    fs.cpSync(files.resolveBundledAssetsPath(), targetPath, {
       recursive: true,
       force: true,
     });
 
     return targetPath;
-  }
-
-  private resolveBundledAssetsPath(): string {
-    return this.options.isPackaged
-      ? path.join(this.options.resourcesPath, 'sandcastle')
-      : path.join(process.cwd(), 'resources', 'sandcastle');
   }
 }
 

@@ -1,0 +1,244 @@
+// @vitest-environment jsdom
+
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createMemoryRouter, RouterProvider } from 'react-router';
+import type { AgentRuntimeProfileResult } from '@/contracts/ipc/agent-runtime.contract';
+import type { DesktopApi } from '@/contracts/ipc/shared/desktop-api';
+import type { WorkspaceResult } from '@/contracts/ipc/workspaces.contract';
+import { AppShell } from '../../../routes/AppShell';
+import {
+  RuntimeConfigurationRedirectRoute,
+  WorkspaceConfigurationRedirectRoute,
+} from '../../../routes/ConfigurationRedirectRoutes';
+import { renderWithQuery } from '../../../shared/testing/render-with-query';
+import { ConfigurationPage } from '../ui/ConfigurationPage';
+
+vi.mock('@uiw/react-codemirror', () => ({
+  default: ({
+    value,
+    onChange,
+    editable,
+    'aria-label': ariaLabel,
+  }: {
+    value: string;
+    onChange?: (value: string) => void;
+    editable?: boolean;
+    'aria-label'?: string;
+  }) => (
+    <textarea
+      aria-label={ariaLabel ?? 'Dockerfile editor'}
+      value={value}
+      readOnly={!editable}
+      onChange={(event) => onChange?.(event.target.value)}
+    />
+  ),
+}));
+
+describe('ConfigurationPage', () => {
+  let workspaces: WorkspaceResult[];
+  let profiles: AgentRuntimeProfileResult[];
+  let dockerfiles: Map<string, string>;
+
+  beforeEach(() => {
+    workspaces = [
+      {
+        id: 'workspace-1',
+        path: '/repo',
+        name: 'repo',
+        currentBranch: 'main',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+    profiles = [
+      {
+        id: 'starter',
+        name: 'Starter',
+        sourceKind: 'bundled-starter',
+        profilePath: null,
+        imageName: 'agentic:starter',
+        claudeDefaultModel: 'claude-opus-4-7',
+        codexDefaultModel: 'gpt-5.4',
+        claudeAuthMountEnabled: false,
+        codexAuthMountEnabled: false,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    ];
+    dockerfiles = new Map([['starter', 'FROM starter\n']]);
+
+    window.desktop = {
+      appInfo: {
+        get: vi.fn(),
+      },
+      workspaces: {
+        list: vi.fn(async () => workspaces),
+        pick: vi.fn(async () => workspaces[0] ?? null),
+      },
+      agentRuns: {
+        start: vi.fn(),
+        list: vi.fn(),
+        get: vi.fn(),
+        getCommitDetails: vi.fn(),
+        getCommitFileDiff: vi.fn(),
+        cancel: vi.fn(),
+        onEvent: vi.fn(() => () => undefined),
+      },
+      agentRuntime: {
+        listProfiles: vi.fn(async () => profiles),
+        getProfile: vi.fn(),
+        updateProfile: vi.fn(async (input) => {
+          const profile = profiles.find((item) => item.id === input.id);
+
+          if (!profile) {
+            throw new Error('Runtime profile not found.');
+          }
+
+          Object.assign(profile, input, { updatedAt: 2 });
+          return profile;
+        }),
+        duplicateStarterProfile: vi.fn(async () => {
+          const starter = profiles[0] as AgentRuntimeProfileResult;
+          const profile: AgentRuntimeProfileResult = {
+            ...starter,
+            id: 'copy-1',
+            name: 'Starter copy',
+            sourceKind: 'user-managed-copy',
+            profilePath: '/userData/agent-runtime-profiles/copy-1',
+            imageName: 'agentic:copy-1',
+            createdAt: 2,
+            updatedAt: 2,
+          };
+          profiles = [...profiles, profile];
+          dockerfiles.set(profile.id, dockerfiles.get('starter') ?? '');
+          return profile;
+        }),
+        getProfileDockerfile: vi.fn(async ({ profileId }) => {
+          const profile = profiles.find((item) => item.id === profileId);
+
+          if (!profile) {
+            throw new Error('Runtime profile not found.');
+          }
+
+          return {
+            profileId,
+            content: dockerfiles.get(profileId) ?? '',
+            editable: profile.sourceKind === 'user-managed-copy',
+            path: profile.profilePath
+              ? `${profile.profilePath}/Dockerfile`
+              : '/resources/sandcastle/Dockerfile',
+          };
+        }),
+        updateProfileDockerfile: vi.fn(async ({ profileId, content }) => {
+          dockerfiles.set(profileId, content);
+          return { profileId, content, savedAt: 200 };
+        }),
+        resetProfileDockerfile: vi.fn(async ({ profileId }) => {
+          const content = dockerfiles.get('starter') ?? '';
+          dockerfiles.set(profileId, content);
+          return { profileId, content, savedAt: 200 };
+        }),
+        openProfileFolder: vi.fn(async () => undefined),
+        getImageStatus: vi.fn(async ({ profileId }) => ({
+          imageName: profileId === 'copy-1' ? 'agentic:copy-1' : 'agentic:starter',
+          available: true,
+          checkedAt: 123,
+        })),
+        buildImage: vi.fn(async ({ profileId }) => ({
+          imageName: profileId === 'copy-1' ? 'agentic:copy-1' : 'agentic:starter',
+          succeeded: true,
+        })),
+        onBuildEvent: vi.fn(() => () => undefined),
+      },
+      notes: {
+        list: vi.fn(),
+        create: vi.fn(),
+        delete: vi.fn(),
+      },
+    } satisfies DesktopApi;
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
+  it('defaults to the Workspaces tab', async () => {
+    renderConfigurationPage('/configuration');
+
+    expect(await screen.findByRole('heading', { name: 'Configuration' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Workspaces' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Add workspace' })).toBeTruthy();
+    expect(screen.getByText('/repo')).toBeTruthy();
+  });
+
+  it('shows Runtimes from the runtimes tab and legacy settings redirect', async () => {
+    renderConfigurationPage('/settings');
+
+    expect(await screen.findByRole('heading', { name: 'Runtimes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Duplicate starter' })).toBeTruthy();
+  });
+
+  it('redirects legacy projects route to Workspaces', async () => {
+    renderConfigurationPage('/projects');
+
+    expect(await screen.findByRole('heading', { name: 'Workspaces' })).toBeTruthy();
+  });
+
+  it('blocks tab switching with dirty Dockerfile edits', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    renderConfigurationPage('/configuration?tab=runtimes');
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Duplicate starter' }));
+    expect(await screen.findByDisplayValue('Starter copy')).toBeTruthy();
+    fireEvent.change(await screen.findByLabelText('Dockerfile editor'), {
+      target: { value: 'FROM unsaved\n' },
+    });
+    fireEvent.click(screen.getByRole('link', { name: 'Workspaces' }));
+
+    await waitFor(() => {
+      expect(window.confirm).toHaveBeenCalledWith('Discard unsaved Dockerfile changes?');
+    });
+    expect(screen.getByRole('heading', { name: 'Runtimes' })).toBeTruthy();
+    expect(screen.getByText('Unsaved')).toBeTruthy();
+  });
+
+  it('shows a single Configuration sidebar item', () => {
+    const router = createMemoryRouter([
+      {
+        path: '/',
+        element: <AppShell />,
+        children: [
+          { index: true, element: <p>Home</p> },
+          { path: 'configuration', element: <ConfigurationPage /> },
+        ],
+      },
+    ]);
+
+    renderWithQuery(<RouterProvider router={router} />);
+
+    expect(screen.getByRole('link', { name: 'Configuration' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Workspaces' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Runtimes' })).toBeNull();
+  });
+});
+
+function renderConfigurationPage(initialEntry: string) {
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/',
+        element: <AppShell />,
+        children: [
+          { path: 'configuration', element: <ConfigurationPage /> },
+          { path: 'projects', element: <WorkspaceConfigurationRedirectRoute /> },
+          { path: 'settings', element: <RuntimeConfigurationRedirectRoute /> },
+        ],
+      },
+    ],
+    { initialEntries: [initialEntry] },
+  );
+
+  return renderWithQuery(<RouterProvider router={router} />);
+}

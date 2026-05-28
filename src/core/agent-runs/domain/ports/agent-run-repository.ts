@@ -9,7 +9,7 @@ import type {
 export interface AgentRunRepository {
   createRun(input: CreateAgentRunInput): Promise<AgentRun>;
   getRun(id: string): Promise<AgentRun | null>;
-  listRuns(projectId?: string): Promise<AgentRun[]>;
+  listRuns(workspaceId?: string): Promise<AgentRun[]>;
   updateRunStatus(
     id: string,
     status: AgentRunStatus,

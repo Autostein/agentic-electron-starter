@@ -18,8 +18,8 @@ export const notes = sqliteTable(
   ],
 );
 
-export const projects = sqliteTable(
-  'projects',
+export const workspaces = sqliteTable(
+  'workspaces',
   {
     id: text('id').primaryKey(),
     path: text('path').notNull().unique(),
@@ -29,19 +29,21 @@ export const projects = sqliteTable(
     updatedAt: integer('updated_at').notNull().default(nowMs),
   },
   (table) => [
-    index('projects_updated_at_idx').on(table.updatedAt),
+    index('workspaces_updated_at_idx').on(table.updatedAt),
   ],
 );
 
-export const agentRuntimeSettings = sqliteTable('agent_runtime_settings', {
-  id: text('id').primaryKey().default('default'),
-  dockerImageName: text('docker_image_name').notNull(),
+export const agentRuntimeProfiles = sqliteTable('agent_runtime_profiles', {
+  id: text('id').primaryKey().default('starter'),
+  name: text('name').notNull(),
+  sourceKind: text('source_kind').notNull(),
+  profilePath: text('profile_path'),
+  imageName: text('image_name').notNull(),
   claudeDefaultModel: text('claude_default_model').notNull(),
   codexDefaultModel: text('codex_default_model').notNull(),
   claudeAuthMountEnabled: integer('claude_auth_mount_enabled', { mode: 'boolean' }).notNull(),
-  claudeAuthHostPath: text('claude_auth_host_path').notNull(),
   codexAuthMountEnabled: integer('codex_auth_mount_enabled', { mode: 'boolean' }).notNull(),
-  codexAuthHostPath: text('codex_auth_host_path').notNull(),
+  createdAt: integer('created_at').notNull().default(nowMs),
   updatedAt: integer('updated_at').notNull().default(nowMs),
 });
 
@@ -49,9 +51,12 @@ export const agentRuns = sqliteTable(
   'agent_runs',
   {
     id: text('id').primaryKey(),
-    projectId: text('project_id').notNull(),
-    projectPath: text('project_path').notNull(),
-    projectName: text('project_name').notNull(),
+    workspaceId: text('workspace_id').notNull(),
+    workspacePath: text('workspace_path').notNull(),
+    workspaceName: text('workspace_name').notNull(),
+    runtimeProfileId: text('runtime_profile_id').notNull(),
+    runtimeProfileName: text('runtime_profile_name').notNull(),
+    runtimeImageName: text('runtime_image_name').notNull(),
     provider: text('provider').notNull(),
     model: text('model').notNull(),
     prompt: text('prompt').notNull(),
@@ -65,7 +70,7 @@ export const agentRuns = sqliteTable(
     errorMessage: text('error_message'),
   },
   (table) => [
-    index('agent_runs_project_id_idx').on(table.projectId),
+    index('agent_runs_workspace_id_idx').on(table.workspaceId),
     index('agent_runs_created_at_idx').on(table.createdAt),
     index('agent_runs_status_idx').on(table.status),
   ],
@@ -102,7 +107,7 @@ export const dbSchema = {
   agentRunCommits,
   agentRunEvents,
   agentRuns,
-  agentRuntimeSettings,
+  agentRuntimeProfiles,
   notes,
-  projects,
+  workspaces,
 };

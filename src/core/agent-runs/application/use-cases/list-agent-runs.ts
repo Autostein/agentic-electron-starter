@@ -5,8 +5,8 @@ export type ListAgentRunsDeps = {
 };
 
 export function listAgentRuns(
-  input: { projectId?: string },
+  input: { workspaceId?: string },
   deps: ListAgentRunsDeps,
 ): Promise<AgentRun[]> {
-  return deps.agentRunRepository.listRuns(input.projectId);
+  return deps.agentRunRepository.listRuns(input.workspaceId);
 }

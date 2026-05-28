@@ -9,16 +9,16 @@ import {
 } from '@/contracts/ipc/agent-runtime.contract';
 import { APP_INFO_IPC_CHANNELS } from '@/contracts/ipc/app-info.contract';
 import { NOTES_IPC_CHANNELS } from '@/contracts/ipc/notes.contract';
-import { PROJECTS_IPC_CHANNELS } from '@/contracts/ipc/projects.contract';
+import { WORKSPACES_IPC_CHANNELS } from '@/contracts/ipc/workspaces.contract';
 import type { DesktopApi } from '@/contracts/ipc/shared/desktop-api';
 
 const desktopApi: DesktopApi = {
   appInfo: {
     get: () => ipcRenderer.invoke(APP_INFO_IPC_CHANNELS.get),
   },
-  projects: {
-    pick: () => ipcRenderer.invoke(PROJECTS_IPC_CHANNELS.pick),
-    list: () => ipcRenderer.invoke(PROJECTS_IPC_CHANNELS.list),
+  workspaces: {
+    pick: () => ipcRenderer.invoke(WORKSPACES_IPC_CHANNELS.pick),
+    list: () => ipcRenderer.invoke(WORKSPACES_IPC_CHANNELS.list),
   },
   agentRuns: {
     start: (input) => ipcRenderer.invoke(AGENT_RUNS_IPC_CHANNELS.start, input),
@@ -50,13 +50,37 @@ const desktopApi: DesktopApi = {
     },
   },
   agentRuntime: {
-    getSettings: () => ipcRenderer.invoke(AGENT_RUNTIME_IPC_CHANNELS.getSettings),
-    updateSettings: (input) => ipcRenderer.invoke(
-      AGENT_RUNTIME_IPC_CHANNELS.updateSettings,
+    listProfiles: () => ipcRenderer.invoke(AGENT_RUNTIME_IPC_CHANNELS.listProfiles),
+    getProfile: (input) => ipcRenderer.invoke(AGENT_RUNTIME_IPC_CHANNELS.getProfile, input),
+    updateProfile: (input) => ipcRenderer.invoke(
+      AGENT_RUNTIME_IPC_CHANNELS.updateProfile,
       input,
     ),
-    getImageStatus: () => ipcRenderer.invoke(AGENT_RUNTIME_IPC_CHANNELS.getImageStatus),
-    buildImage: () => ipcRenderer.invoke(AGENT_RUNTIME_IPC_CHANNELS.buildImage),
+    duplicateStarterProfile: (input) => ipcRenderer.invoke(
+      AGENT_RUNTIME_IPC_CHANNELS.duplicateStarterProfile,
+      input,
+    ),
+    getProfileDockerfile: (input) => ipcRenderer.invoke(
+      AGENT_RUNTIME_IPC_CHANNELS.getProfileDockerfile,
+      input,
+    ),
+    updateProfileDockerfile: (input) => ipcRenderer.invoke(
+      AGENT_RUNTIME_IPC_CHANNELS.updateProfileDockerfile,
+      input,
+    ),
+    resetProfileDockerfile: (input) => ipcRenderer.invoke(
+      AGENT_RUNTIME_IPC_CHANNELS.resetProfileDockerfile,
+      input,
+    ),
+    openProfileFolder: (input) => ipcRenderer.invoke(
+      AGENT_RUNTIME_IPC_CHANNELS.openProfileFolder,
+      input,
+    ),
+    getImageStatus: (input) => ipcRenderer.invoke(
+      AGENT_RUNTIME_IPC_CHANNELS.getImageStatus,
+      input,
+    ),
+    buildImage: (input) => ipcRenderer.invoke(AGENT_RUNTIME_IPC_CHANNELS.buildImage, input),
     onBuildEvent: (callback) => {
       const listener = (_event: Electron.IpcRendererEvent, payload: unknown) => {
         callback(DockerImageBuildEventSchema.parse(payload));

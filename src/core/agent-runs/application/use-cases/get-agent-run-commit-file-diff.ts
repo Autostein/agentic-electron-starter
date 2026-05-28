@@ -32,7 +32,7 @@ export async function getAgentRunCommitFileDiff(
   }
 
   return deps.gitCommitReadService.getCommitFileDiff({
-    repoPath: run.projectPath,
+    repoPath: run.workspacePath,
     sha: input.sha,
     path: input.path,
   });

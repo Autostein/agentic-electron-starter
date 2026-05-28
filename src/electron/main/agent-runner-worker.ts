@@ -9,6 +9,7 @@ import {
   type MountConfig,
 } from '@ai-hero/sandcastle';
 import { docker } from '@ai-hero/sandcastle/sandboxes/docker';
+import { assertCliAuthPath } from '@/infrastructure/main/agent-runtime/cli-auth-paths';
 import type {
   AgentRunnerWorkerMessage,
   AgentRunnerWorkerOutboundMessage,
@@ -39,12 +40,12 @@ parentPort.on('message', (event) => {
 });
 
 async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
-  const { run: agentRun, settings, worktreePath } = message.payload;
+  const { run: agentRun, profile, worktreePath } = message.payload;
   abortController = new AbortController();
   fs.mkdirSync(path.dirname(agentRun.logFilePath), { recursive: true });
 
   postStatus('running', 'Run started');
-  await createWorktree(agentRun.projectPath, worktreePath, agentRun.branchName);
+  await createWorktree(agentRun.workspacePath, worktreePath, agentRun.branchName);
 
   try {
     const result = await run({
@@ -52,10 +53,10 @@ async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
         ? claudeCode(agentRun.model, { captureSessions: false })
         : codex(agentRun.model, { captureSessions: false }),
       sandbox: docker({
-        imageName: settings.dockerImageName,
+        imageName: profile.imageName,
         containerUid: process.getuid?.() ?? 1000,
         containerGid: process.getgid?.() ?? 1000,
-        mounts: toAuthMounts(agentRun.provider, settings),
+        mounts: toAuthMounts(agentRun.provider, profile),
       }),
       cwd: worktreePath,
       prompt: agentRun.prompt,
@@ -68,7 +69,7 @@ async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
           postStreamEvent(event);
         },
       },
-      hooks: toAuthHooks(agentRun.provider, settings),
+      hooks: toAuthHooks(agentRun.provider, profile),
       signal: abortController.signal,
     });
 
@@ -87,12 +88,12 @@ async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
 }
 
 async function createWorktree(
-  projectPath: string,
+  workspacePath: string,
   worktreePath: string,
   branchName: string,
 ): Promise<void> {
   fs.mkdirSync(path.dirname(worktreePath), { recursive: true });
-  await execGit(projectPath, ['worktree', 'add', '-b', branchName, worktreePath, 'HEAD']);
+  await execGit(workspacePath, ['worktree', 'add', '-b', branchName, worktreePath, 'HEAD']);
 }
 
 function execGit(cwd: string, args: string[]): Promise<void> {
@@ -110,17 +111,15 @@ function execGit(cwd: string, args: string[]): Promise<void> {
 
 function toAuthMounts(
   provider: 'claude-code' | 'codex',
-  settings: AgentRunnerWorkerStartMessage['payload']['settings'],
+  profile: AgentRunnerWorkerStartMessage['payload']['profile'],
 ): MountConfig[] {
   const auth = provider === 'claude-code'
     ? {
-      enabled: settings.claudeAuthMountEnabled,
-      hostPath: settings.claudeAuthHostPath,
+      enabled: profile.claudeAuthMountEnabled,
       sandboxPath: '/mnt/agent-auth/claude',
     }
     : {
-      enabled: settings.codexAuthMountEnabled,
-      hostPath: settings.codexAuthHostPath,
+      enabled: profile.codexAuthMountEnabled,
       sandboxPath: '/mnt/agent-auth/codex',
     };
 
@@ -128,20 +127,18 @@ function toAuthMounts(
     return [];
   }
 
-  if (!fs.existsSync(auth.hostPath)) {
-    throw new Error(`Missing CLI auth path: ${auth.hostPath}`);
-  }
+  const hostPath = assertCliAuthPath(provider);
 
-  return [{ hostPath: auth.hostPath, sandboxPath: auth.sandboxPath, readonly: true }];
+  return [{ hostPath, sandboxPath: auth.sandboxPath, readonly: true }];
 }
 
 function toAuthHooks(
   provider: 'claude-code' | 'codex',
-  settings: AgentRunnerWorkerStartMessage['payload']['settings'],
+  profile: AgentRunnerWorkerStartMessage['payload']['profile'],
 ) {
   const enabled = provider === 'claude-code'
-    ? settings.claudeAuthMountEnabled
-    : settings.codexAuthMountEnabled;
+    ? profile.claudeAuthMountEnabled
+    : profile.codexAuthMountEnabled;
 
   if (!enabled) {
     return undefined;

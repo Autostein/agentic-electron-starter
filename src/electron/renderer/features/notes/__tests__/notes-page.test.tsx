@@ -22,7 +22,7 @@ describe('NotesPage', () => {
       appInfo: {
         get: vi.fn(),
       },
-      projects: {
+      workspaces: {
         pick: vi.fn(),
         list: vi.fn(),
       },
@@ -36,8 +36,14 @@ describe('NotesPage', () => {
         onEvent: vi.fn(() => () => undefined),
       },
       agentRuntime: {
-        getSettings: vi.fn(),
-        updateSettings: vi.fn(),
+        listProfiles: vi.fn(),
+        getProfile: vi.fn(),
+        updateProfile: vi.fn(),
+        duplicateStarterProfile: vi.fn(),
+        getProfileDockerfile: vi.fn(),
+        updateProfileDockerfile: vi.fn(),
+        resetProfileDockerfile: vi.fn(),
+        openProfileFolder: vi.fn(),
         getImageStatus: vi.fn(),
         buildImage: vi.fn(),
         onBuildEvent: vi.fn(() => () => undefined),

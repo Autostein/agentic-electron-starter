@@ -21,7 +21,7 @@ describe('LocalDockerImageBuilder', () => {
       return undefined as never;
     });
 
-    await expect(createBuilder().getImageStatus({ imageName: 'agentic:test' }, 123)).resolves.toEqual({
+    await expect(createBuilder().getImageStatus(runtimeImageInput(), 123)).resolves.toEqual({
       imageName: 'agentic:test',
       available: true,
       checkedAt: 123,
@@ -39,7 +39,7 @@ describe('LocalDockerImageBuilder', () => {
       return undefined as never;
     });
 
-    await expect(createBuilder().getImageStatus({ imageName: 'agentic:test' }, 123)).resolves.toEqual({
+    await expect(createBuilder().getImageStatus(runtimeImageInput(), 123)).resolves.toEqual({
       imageName: 'agentic:test',
       available: false,
       checkedAt: 123,
@@ -54,7 +54,7 @@ describe('LocalDockerImageBuilder', () => {
       return undefined as never;
     });
 
-    await expect(createBuilder().getImageStatus({ imageName: 'agentic:test' }, 123)).resolves.toEqual({
+    await expect(createBuilder().getImageStatus(runtimeImageInput(), 123)).resolves.toEqual({
       imageName: 'agentic:test',
       available: false,
       checkedAt: 123,
@@ -69,4 +69,12 @@ function createBuilder(): LocalDockerImageBuilder {
     resourcesPath: '/tmp/resources',
     isPackaged: false,
   });
+}
+
+function runtimeImageInput() {
+  return {
+    imageName: 'agentic:test',
+    sourceKind: 'bundled-starter' as const,
+    profilePath: null,
+  };
 }

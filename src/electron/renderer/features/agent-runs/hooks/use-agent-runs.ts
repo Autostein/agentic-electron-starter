@@ -13,10 +13,10 @@ import {
 
 export const agentRunsQueryKey = ['agent-runs'] as const;
 
-export function useAgentRuns(projectId?: string) {
+export function useAgentRuns(workspaceId?: string) {
   return useQuery({
-    queryKey: [...agentRunsQueryKey, projectId ?? 'all'],
-    queryFn: () => listAgentRuns(projectId ? { projectId } : undefined),
+    queryKey: [...agentRunsQueryKey, workspaceId ?? 'all'],
+    queryFn: () => listAgentRuns(workspaceId ? { workspaceId } : undefined),
   });
 }
 

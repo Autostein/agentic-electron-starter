@@ -10,18 +10,19 @@ import type {
   AgentRunner,
 } from '../../../domain';
 import type {
-  AgentRuntimeSettings,
-  AgentRuntimeSettingsRepository,
+  AgentRuntimeProfile,
+  AgentRuntimeProfileRepository,
+  BuildDockerImageInput,
   DockerImageBuildEvent,
   DockerImageBuilder,
   DockerImageBuildResult,
   DockerImageStatus,
 } from '@/core/agent-runtime/domain';
-import type { Project, ProjectInput, ProjectRepository } from '@/core/projects/domain';
+import type { Workspace, WorkspaceInput, WorkspaceRepository } from '@/core/workspaces/domain';
 
-class FakeProjectRepository implements ProjectRepository {
-  project: Project = {
-    id: 'project-1',
+class FakeWorkspaceRepository implements WorkspaceRepository {
+  workspace: Workspace = {
+    id: 'workspace-1',
     path: '/repo',
     name: 'repo',
     currentBranch: 'main',
@@ -29,38 +30,49 @@ class FakeProjectRepository implements ProjectRepository {
     updatedAt: 1,
   };
 
-  async listProjects(): Promise<Project[]> {
-    return [this.project];
+  async listWorkspaces(): Promise<Workspace[]> {
+    return [this.workspace];
   }
 
-  async getProject(id: string): Promise<Project | null> {
-    return id === this.project.id ? this.project : null;
+  async getWorkspace(id: string): Promise<Workspace | null> {
+    return id === this.workspace.id ? this.workspace : null;
   }
 
-  async upsertProject(input: ProjectInput): Promise<Project> {
-    this.project = { ...this.project, ...input };
-    return this.project;
+  async upsertWorkspace(input: WorkspaceInput): Promise<Workspace> {
+    this.workspace = { ...this.workspace, ...input };
+    return this.workspace;
   }
 }
 
-class FakeSettingsRepository implements AgentRuntimeSettingsRepository {
-  settings: AgentRuntimeSettings = {
-    dockerImageName: 'agentic:test',
+class FakeProfileRepository implements AgentRuntimeProfileRepository {
+  profile: AgentRuntimeProfile = {
+    id: 'profile-1',
+    name: 'Starter',
+    sourceKind: 'bundled-starter',
+    profilePath: null,
+    imageName: 'agentic:test',
     claudeDefaultModel: 'claude-opus-4-7',
     codexDefaultModel: 'gpt-5.4',
-    claudeAuthMountEnabled: true,
-    claudeAuthHostPath: '/home/me/.claude',
-    codexAuthMountEnabled: true,
-    codexAuthHostPath: '/home/me/.codex',
+    claudeAuthMountEnabled: false,
+    codexAuthMountEnabled: false,
+    createdAt: 1,
     updatedAt: 1,
   };
 
-  async getSettings(): Promise<AgentRuntimeSettings> {
-    return this.settings;
+  async listProfiles(): Promise<AgentRuntimeProfile[]> {
+    return [this.profile];
   }
 
-  async updateSettings(): Promise<AgentRuntimeSettings> {
-    return this.settings;
+  async getProfile(id: string): Promise<AgentRuntimeProfile | null> {
+    return id === this.profile.id ? this.profile : null;
+  }
+
+  async createProfile(): Promise<AgentRuntimeProfile> {
+    return this.profile;
+  }
+
+  async updateProfile(): Promise<AgentRuntimeProfile> {
+    return this.profile;
   }
 }
 
@@ -142,7 +154,7 @@ class FakeRunner implements AgentRunner {
 class FakeDockerImageBuilder implements DockerImageBuilder {
   available = true;
 
-  async getImageStatus(input: { imageName: string }, checkedAt: number): Promise<DockerImageStatus> {
+  async getImageStatus(input: BuildDockerImageInput, checkedAt: number): Promise<DockerImageStatus> {
     return {
       imageName: input.imageName,
       available: this.available,
@@ -152,7 +164,7 @@ class FakeDockerImageBuilder implements DockerImageBuilder {
   }
 
   async buildImage(
-    input: { imageName: string },
+    input: BuildDockerImageInput,
     _onEvent: (event: DockerImageBuildEvent) => void,
   ): Promise<DockerImageBuildResult> {
     return { imageName: input.imageName, succeeded: true };
@@ -166,7 +178,8 @@ describe('agent run use-cases', () => {
 
     const run = await startAgentRun(
       {
-        projectId: 'project-1',
+        workspaceId: 'workspace-1',
+        runtimeProfileId: 'profile-1',
         provider: 'claude-code',
         model: 'claude-opus-4-7',
         prompt: 'Implement feature',
@@ -174,9 +187,10 @@ describe('agent run use-cases', () => {
       {
         agentRunRepository: runRepository,
         agentRunner: new FakeRunner(),
-        projectRepository: new FakeProjectRepository(),
-        settingsRepository: new FakeSettingsRepository(),
+        workspaceRepository: new FakeWorkspaceRepository(),
+        profileRepository: new FakeProfileRepository(),
         dockerImageBuilder: new FakeDockerImageBuilder(),
+        validateRuntimeProfile: () => undefined,
         createId: () => `id-${published.length + runRepository.events.length}`,
         createLogFilePath: (runId) => `/logs/${runId}.log`,
         publishEvent: (event) => published.push(event),
@@ -207,7 +221,8 @@ describe('agent run use-cases', () => {
     await expect(
       startAgentRun(
         {
-          projectId: 'project-1',
+          workspaceId: 'workspace-1',
+          runtimeProfileId: 'profile-1',
           provider: 'codex',
           model: 'gpt-5.4',
           prompt: 'Implement feature',
@@ -215,9 +230,10 @@ describe('agent run use-cases', () => {
         {
           agentRunRepository: runRepository,
           agentRunner: runner,
-          projectRepository: new FakeProjectRepository(),
-          settingsRepository: new FakeSettingsRepository(),
+          workspaceRepository: new FakeWorkspaceRepository(),
+          profileRepository: new FakeProfileRepository(),
           dockerImageBuilder,
+          validateRuntimeProfile: () => undefined,
           createId: () => 'run-1',
           createLogFilePath: (runId) => `/logs/${runId}.log`,
           publishEvent: () => undefined,

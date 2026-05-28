@@ -1,10 +1,13 @@
 import type {
+  AgentRuntimeProfileSourceKind,
   DockerImageBuildEvent,
   DockerImageStatus,
-} from '../entities/agent-runtime-settings';
+} from '../entities/agent-runtime-profile';
 
 export type BuildDockerImageInput = {
   imageName: string;
+  sourceKind: AgentRuntimeProfileSourceKind;
+  profilePath: string | null;
 };
 
 export type DockerImageBuildResult = {

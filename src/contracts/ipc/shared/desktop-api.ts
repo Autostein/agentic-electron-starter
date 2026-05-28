@@ -14,14 +14,21 @@ import type {
   WatchAgentRunInput,
 } from '../agent-runs.contract';
 import type {
-  AgentRuntimeSettingsResult,
+  AgentRuntimeProfileResult,
+  DuplicateStarterRuntimeProfileInput,
   DockerImageBuildEventResult,
   DockerImageBuildResult,
   DockerImageStatusResult,
-  UpdateAgentRuntimeSettingsInput,
+  GetAgentRuntimeProfileInput,
+  RuntimeProfileDockerfileInput,
+  RuntimeProfileDockerfileResult,
+  RuntimeProfileImageInput,
+  UpdateAgentRuntimeProfileInput,
+  UpdateRuntimeProfileDockerfileInput,
+  UpdateRuntimeProfileDockerfileResult,
 } from '../agent-runtime.contract';
 import type { CreateNoteInput, DeleteNoteInput, NoteResult } from '../notes.contract';
-import type { ProjectResult } from '../projects.contract';
+import type { WorkspaceResult } from '../workspaces.contract';
 
 export type DesktopUnsubscribe = () => void;
 
@@ -29,9 +36,9 @@ export type DesktopApi = {
   appInfo: {
     get: () => Promise<AppInfoResult>;
   };
-  projects: {
-    pick: () => Promise<ProjectResult | null>;
-    list: () => Promise<ProjectResult[]>;
+  workspaces: {
+    pick: () => Promise<WorkspaceResult | null>;
+    list: () => Promise<WorkspaceResult[]>;
   };
   agentRuns: {
     start: (input: StartAgentRunInput) => Promise<AgentRunResult>;
@@ -46,12 +53,26 @@ export type DesktopApi = {
     ) => DesktopUnsubscribe;
   };
   agentRuntime: {
-    getSettings: () => Promise<AgentRuntimeSettingsResult>;
-    updateSettings: (
-      input: UpdateAgentRuntimeSettingsInput,
-    ) => Promise<AgentRuntimeSettingsResult>;
-    getImageStatus: () => Promise<DockerImageStatusResult>;
-    buildImage: () => Promise<DockerImageBuildResult>;
+    listProfiles: () => Promise<AgentRuntimeProfileResult[]>;
+    getProfile: (input: GetAgentRuntimeProfileInput) => Promise<AgentRuntimeProfileResult>;
+    updateProfile: (
+      input: UpdateAgentRuntimeProfileInput,
+    ) => Promise<AgentRuntimeProfileResult>;
+    duplicateStarterProfile: (
+      input?: DuplicateStarterRuntimeProfileInput,
+    ) => Promise<AgentRuntimeProfileResult>;
+    getProfileDockerfile: (
+      input: RuntimeProfileDockerfileInput,
+    ) => Promise<RuntimeProfileDockerfileResult>;
+    updateProfileDockerfile: (
+      input: UpdateRuntimeProfileDockerfileInput,
+    ) => Promise<UpdateRuntimeProfileDockerfileResult>;
+    resetProfileDockerfile: (
+      input: RuntimeProfileDockerfileInput,
+    ) => Promise<UpdateRuntimeProfileDockerfileResult>;
+    openProfileFolder: (input: RuntimeProfileDockerfileInput) => Promise<void>;
+    getImageStatus: (input: RuntimeProfileImageInput) => Promise<DockerImageStatusResult>;
+    buildImage: (input: RuntimeProfileImageInput) => Promise<DockerImageBuildResult>;
     onBuildEvent: (
       callback: (event: DockerImageBuildEventResult) => void,
     ) => DesktopUnsubscribe;
