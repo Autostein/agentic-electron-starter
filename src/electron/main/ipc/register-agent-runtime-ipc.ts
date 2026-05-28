@@ -158,7 +158,7 @@ export function createAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps) {
       const input = RuntimeProfileImageInputSchema.parse(payload);
 
       if (activeBuild) {
-        throw new AppError('RUN_ALREADY_ACTIVE', 'Docker image build is already running.');
+        throw new AppError('BUILD_ALREADY_ACTIVE', 'Docker image build is already running.');
       }
 
       activeBuild = (async () => {

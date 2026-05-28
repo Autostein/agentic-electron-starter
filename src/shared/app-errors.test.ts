@@ -27,6 +27,10 @@ describe('app errors', () => {
 
   it('detects app error DTOs', () => {
     expect(isAppErrorDto({ code: 'AUTH_MISSING', message: 'Missing auth.' })).toBe(true);
+    expect(isAppErrorDto({ code: 'BUILD_ALREADY_ACTIVE', message: 'Build already running.' })).toBe(
+      true,
+    );
+    expect(isAppErrorDto({ code: 'EXTERNAL_PROCESS_FAILED', message: 'Git failed.' })).toBe(true);
     expect(isAppErrorDto({ code: 'BAD', message: 'Missing auth.' })).toBe(false);
   });
 

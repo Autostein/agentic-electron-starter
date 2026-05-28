@@ -248,7 +248,7 @@ describe('agent runtime IPC handlers', () => {
 
     const build = handlers.buildImage(null, { profileId: 'starter' });
     await expect(handlers.buildImage(null, { profileId: 'starter' })).rejects.toMatchObject({
-      code: 'RUN_ALREADY_ACTIVE',
+      code: 'BUILD_ALREADY_ACTIVE',
       message: 'Docker image build is already running.',
     });
     dockerImageBuilder.resolveBuild?.({ imageName: 'agentic:starter', succeeded: true });
