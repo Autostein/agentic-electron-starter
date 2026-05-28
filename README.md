@@ -63,6 +63,27 @@ renderer route
   -> Docker sandbox
 ```
 
+## Extension architecture
+
+New capabilities should follow the template flow:
+
+```text
+renderer feature client
+  -> window.desktop namespace
+  -> preload bridge in src/electron/preload/bridge
+  -> IPC result envelope unwrap
+  -> main IPC handler with Zod input/output validation
+  -> core application use-case
+  -> runtime-free domain policies, value objects, events, and transitions
+  -> infrastructure port implementation
+```
+
+Main IPC handlers return `IpcResult` envelopes. The preload bridge invokes IPC and unwraps those envelopes, rehydrating shared runtime-free `AppError` DTOs back into `AppError` instances for renderer callers. Keep preload files thin: update a bridge module for existing `window.desktop` namespaces, and compose it in `preload.ts` only when adding a new namespace.
+
+Core domain code owns reusable invariants, state transitions, naming policy, value objects, and event creation. Application use-cases coordinate repositories, runners, Docker, Git, IDs, clocks, log paths, and event publication. Infrastructure implements ports for SQLite, Git, Docker, filesystem, Electron, and Sandcastle.
+
+Main-process wiring is split under `src/electron/main/bootstrap` so dependency construction stays separate from IPC registration and Electron lifecycle code.
+
 Target repositories do not need `.sandcastle` files. The app creates a normal Git branch named `agentic/<run-id>-<slug>`, prepares an app-owned worktree under Electron `userData`, and runs Sandcastle in that worktree. Runs never auto-merge.
 
 Provider auth is CLI-auth only in v1. Settings let users mount Claude/Codex config directories read-only into the Docker sandbox for the selected provider; no API keys are stored in SQLite, IPC, or Keychain.
