@@ -1,6 +1,7 @@
 export type {
   AgentRun,
   AgentRunCommit,
+  AgentRunStatusTransition,
   AgentRunStatus,
   CreateQueuedAgentRunInput,
   AgentRunnerCallbacks,

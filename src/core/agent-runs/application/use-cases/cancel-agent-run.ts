@@ -25,15 +25,12 @@ export async function cancelAgentRun(
 
   const now = deps.now();
   await deps.agentRunner.cancel(runId);
-  const cancelledRun = transitionAgentRunStatus(run, {
+  const transition = transitionAgentRunStatus(run, {
     status: 'cancelled',
     now,
   });
-  await deps.agentRunRepository.updateRunStatus(runId, cancelledRun.status, {
-    startedAt: cancelledRun.startedAt,
-    finishedAt: cancelledRun.finishedAt,
-    errorMessage: cancelledRun.errorMessage,
-  });
+  const cancelledRun = transition.nextRun;
+  await deps.agentRunRepository.applyRunStatusTransition(transition);
 
   const event: AgentRunEvent = createAgentRunStatusEvent({
     id: deps.createId(),

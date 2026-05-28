@@ -7,3 +7,4 @@
 - Domain owns reusable invariants, state transitions, value objects, and pure policies.
 - Application use cases coordinate repositories, runners, Docker, Git, IDs, clocks, log paths, and event publication.
 - Prefer moving reusable business rules into domain instead of duplicating them in use cases.
+- Repository ports should avoid raw business-state mutation parameters when a domain-produced snapshot or transition can express the same write.

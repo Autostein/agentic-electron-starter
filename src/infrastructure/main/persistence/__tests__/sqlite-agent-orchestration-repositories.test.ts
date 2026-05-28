@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { transitionAgentRunStatus } from '@/core/agent-runs/domain';
 import { closeMainDatabase, getMainDatabase, initializeMainDatabase } from '../db/client';
 import { SQLiteAgentRunRepository } from '../sqlite-agent-run-repository';
 import { SQLiteAgentRuntimeProfileRepository } from '../sqlite-agent-runtime-profile-repository';
@@ -74,7 +75,9 @@ describe('SQLite agent orchestration repositories', () => {
       createdAt: 300,
     });
 
-    await runs.updateRunStatus(run.id, 'running', { startedAt: 400 });
+    await runs.applyRunStatusTransition(
+      transitionAgentRunStatus(run, { status: 'running', now: 400 }),
+    );
     await runs.appendEvent({
       id: 'event-1',
       runId: run.id,

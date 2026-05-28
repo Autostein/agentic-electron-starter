@@ -4,6 +4,7 @@ import type {
   AgentRunEvent,
   AgentRunEventType,
   AgentRunRepository,
+  AgentRunStatusTransition,
   AgentRunStatus,
   CreateAgentRunInput,
 } from '@/core/agent-runs/domain';
@@ -144,17 +145,8 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
     return (rows as AgentRunRow[]).map(toRun);
   }
 
-  async updateRunStatus(
-    id: string,
-    status: AgentRunStatus,
-    timestamps: { startedAt?: number | null; finishedAt?: number | null; errorMessage?: string | null },
-  ): Promise<void> {
-    const current = await this.getRun(id);
-
-    if (!current) {
-      return;
-    }
-
+  async applyRunStatusTransition(transition: AgentRunStatusTransition): Promise<void> {
+    const run = transition.nextRun;
     getMainDatabase()
       .prepare(
         `
@@ -164,11 +156,11 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
         `,
       )
       .run(
-        status,
-        timestamps.startedAt === undefined ? current.startedAt : timestamps.startedAt,
-        timestamps.finishedAt === undefined ? current.finishedAt : timestamps.finishedAt,
-        timestamps.errorMessage === undefined ? current.errorMessage : timestamps.errorMessage,
-        id,
+        run.status,
+        run.startedAt,
+        run.finishedAt,
+        run.errorMessage,
+        transition.runId,
       );
   }
 

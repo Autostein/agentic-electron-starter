@@ -2,7 +2,7 @@ import type {
   AgentRun,
   AgentRunCommit,
   AgentRunEvent,
-  AgentRunStatus,
+  AgentRunStatusTransition,
   CreateAgentRunInput,
 } from '../entities/agent-run';
 
@@ -10,11 +10,7 @@ export interface AgentRunRepository {
   createRun(input: CreateAgentRunInput): Promise<AgentRun>;
   getRun(id: string): Promise<AgentRun | null>;
   listRuns(workspaceId?: string): Promise<AgentRun[]>;
-  updateRunStatus(
-    id: string,
-    status: AgentRunStatus,
-    timestamps: { startedAt?: number | null; finishedAt?: number | null; errorMessage?: string | null },
-  ): Promise<void>;
+  applyRunStatusTransition(transition: AgentRunStatusTransition): Promise<void>;
   appendEvent(event: AgentRunEvent): Promise<void>;
   listEvents(runId: string): Promise<AgentRunEvent[]>;
   appendCommit(commit: AgentRunCommit): Promise<void>;

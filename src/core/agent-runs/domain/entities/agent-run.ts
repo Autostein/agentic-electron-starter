@@ -9,6 +9,8 @@ import { normalizeAgentPrompt } from '../value-objects/agent-prompt';
 import { normalizeAgentRunId } from '../value-objects/agent-run-id';
 import { normalizeMaxIterations } from '../value-objects/max-iterations';
 
+const agentRunStatusTransitionBrand: unique symbol = Symbol('AgentRunStatusTransition');
+
 export type AgentRunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
 export type AgentRun = {
@@ -81,6 +83,14 @@ export type TransitionAgentRunStatusInput = {
   errorMessage?: string | null;
 };
 
+export type AgentRunStatusTransition = {
+  readonly [agentRunStatusTransitionBrand]: true;
+  runId: string;
+  fromStatus: AgentRunStatus;
+  toStatus: AgentRunStatus;
+  nextRun: AgentRun;
+};
+
 export function createQueuedAgentRun(input: CreateQueuedAgentRunInput): AgentRun {
   const id = normalizeAgentRunId(input.id);
   const prompt = normalizeAgentPrompt(input.prompt);
@@ -102,36 +112,42 @@ export function createQueuedAgentRun(input: CreateQueuedAgentRunInput): AgentRun
 export function transitionAgentRunStatus(
   run: AgentRun,
   input: TransitionAgentRunStatusInput,
-): AgentRun {
+): AgentRunStatusTransition {
   assertCanTransitionAgentRunStatus(run.status, input.status);
 
-  if (run.status === input.status) {
-    return { ...run };
-  }
+  let nextRun: AgentRun;
 
-  if (input.status === 'running') {
-    return {
+  if (run.status === input.status) {
+    nextRun = { ...run };
+  } else if (input.status === 'running') {
+    nextRun = {
       ...run,
       status: input.status,
       startedAt: run.startedAt ?? input.now,
       finishedAt: null,
       errorMessage: null,
     };
-  }
-
-  if (isTerminalAgentRunStatus(input.status)) {
-    return {
+  } else if (isTerminalAgentRunStatus(input.status)) {
+    nextRun = {
       ...run,
       status: input.status,
       finishedAt: input.now,
       errorMessage: input.status === 'failed' ? input.errorMessage ?? null : null,
     };
+  } else {
+    nextRun = {
+      ...run,
+      status: input.status,
+      errorMessage: null,
+    };
   }
 
   return {
-    ...run,
-    status: input.status,
-    errorMessage: null,
+    [agentRunStatusTransitionBrand]: true,
+    runId: run.id,
+    fromStatus: run.status,
+    toStatus: input.status,
+    nextRun,
   };
 }
 

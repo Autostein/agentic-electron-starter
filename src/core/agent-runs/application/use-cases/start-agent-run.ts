@@ -122,17 +122,14 @@ export async function startAgentRun(
           return;
         }
 
-        currentRun = transitionAgentRunStatus(persistedRun, {
+        const transition = transitionAgentRunStatus(persistedRun, {
           status,
           now: statusAt,
           errorMessage,
         });
+        currentRun = transition.nextRun;
 
-        await deps.agentRunRepository.updateRunStatus(runId, currentRun.status, {
-          startedAt: currentRun.startedAt,
-          finishedAt: currentRun.finishedAt,
-          errorMessage: currentRun.errorMessage,
-        });
+        await deps.agentRunRepository.applyRunStatusTransition(transition);
         await recordEvent(
           status === 'failed' ? createAgentRunErrorEvent({
             id: deps.createId(),

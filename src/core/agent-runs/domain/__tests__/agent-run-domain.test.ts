@@ -89,9 +89,19 @@ describe('agent-run domain', () => {
 
   it('updates timestamps and errors during status transitions', () => {
     const queued = createQueuedAgentRun(baseRunInput);
-    const running = transitionAgentRunStatus(queued, { status: 'running', now: 200 });
-    const succeeded = transitionAgentRunStatus(running, { status: 'succeeded', now: 300 });
+    const runningTransition = transitionAgentRunStatus(queued, { status: 'running', now: 200 });
+    const running = runningTransition.nextRun;
+    const succeededTransition = transitionAgentRunStatus(running, {
+      status: 'succeeded',
+      now: 300,
+    });
+    const succeeded = succeededTransition.nextRun;
 
+    expect(runningTransition).toMatchObject({
+      runId: queued.id,
+      fromStatus: 'queued',
+      toStatus: 'running',
+    });
     expect(running).toMatchObject({
       status: 'running',
       startedAt: 200,
@@ -113,7 +123,7 @@ describe('agent-run domain', () => {
       startedAt: 200,
     };
 
-    expect(transitionAgentRunStatus(run, { status: 'running', now: 300 })).toEqual(run);
+    expect(transitionAgentRunStatus(run, { status: 'running', now: 300 }).nextRun).toEqual(run);
   });
 
   it('creates canonical run events', () => {

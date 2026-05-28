@@ -10,7 +10,7 @@ import type {
   AgentRunCommit,
   AgentRunEvent,
   AgentRunRepository,
-  AgentRunStatus,
+  AgentRunStatusTransition,
   CreateAgentRunInput,
   AgentRunner,
 } from '@/core/agent-runs/domain';
@@ -106,15 +106,8 @@ class FakeRunRepository implements AgentRunRepository {
     return [...this.runs.values()];
   }
 
-  async updateRunStatus(
-    id: string,
-    status: AgentRunStatus,
-    timestamps: { startedAt?: number | null; finishedAt?: number | null; errorMessage?: string | null },
-  ): Promise<void> {
-    const run = this.runs.get(id);
-    if (run) {
-      this.runs.set(id, { ...run, ...timestamps, status });
-    }
+  async applyRunStatusTransition(transition: AgentRunStatusTransition): Promise<void> {
+    this.runs.set(transition.runId, transition.nextRun);
   }
 
   async appendEvent(event: AgentRunEvent): Promise<void> {
