@@ -22,6 +22,8 @@ pnpm test
 - Preload exposes typed wrappers only and no raw IPC.
 - IPC contracts contain schemas/channels/DTOs only.
 - Core domain/application stay runtime-free.
+- Core domain owns reusable invariants, state transitions, value objects, and pure policies.
+- Core application coordinates repositories, runners, Docker, Git, IDs, clocks, log paths, and event publication.
 - Sandcastle imports stay in the utility-process worker path.
 - Main/infrastructure adapters do not import renderer code.
 - New IPC capabilities validate inputs and have tests.

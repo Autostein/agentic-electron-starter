@@ -1,4 +1,13 @@
 import type { AgentProviderId, AgentRuntimeProfile } from '@/core/agent-runtime/domain';
+import type { AgentRunEvent } from '../events/agent-run-event';
+import { createAgentRunBranchName } from '../policies/agent-run-branch-name';
+import {
+  assertCanTransitionAgentRunStatus,
+  isTerminalAgentRunStatus,
+} from '../policies/agent-run-status-policy';
+import { normalizeAgentPrompt } from '../value-objects/agent-prompt';
+import { normalizeAgentRunId } from '../value-objects/agent-run-id';
+import { normalizeMaxIterations } from '../value-objects/max-iterations';
 
 export type AgentRunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'cancelled';
 
@@ -40,14 +49,13 @@ export type CreateAgentRunInput = {
   createdAt: number;
 };
 
-export type AgentRunEventType = 'status' | 'log' | 'tool' | 'commit' | 'error';
-
-export type AgentRunEvent = {
+export type CreateQueuedAgentRunInput = Omit<
+  CreateAgentRunInput,
+  'id' | 'prompt' | 'maxIterations' | 'branchName'
+> & {
   id: string;
-  runId: string;
-  type: AgentRunEventType;
-  message: string;
-  createdAt: number;
+  prompt: string;
+  maxIterations?: number | null;
 };
 
 export type AgentRunCommit = {
@@ -66,3 +74,65 @@ export type AgentRunnerCallbacks = {
   onStatus: (status: AgentRunStatus, errorMessage?: string | null) => void | Promise<void>;
   onCommit: (sha: string) => void | Promise<void>;
 };
+
+export type TransitionAgentRunStatusInput = {
+  status: AgentRunStatus;
+  now: number;
+  errorMessage?: string | null;
+};
+
+export function createQueuedAgentRun(input: CreateQueuedAgentRunInput): AgentRun {
+  const id = normalizeAgentRunId(input.id);
+  const prompt = normalizeAgentPrompt(input.prompt);
+  const maxIterations = normalizeMaxIterations(input.maxIterations);
+
+  return {
+    ...input,
+    id,
+    prompt,
+    maxIterations,
+    branchName: createAgentRunBranchName({ runId: id, prompt }),
+    status: 'queued',
+    startedAt: null,
+    finishedAt: null,
+    errorMessage: null,
+  };
+}
+
+export function transitionAgentRunStatus(
+  run: AgentRun,
+  input: TransitionAgentRunStatusInput,
+): AgentRun {
+  assertCanTransitionAgentRunStatus(run.status, input.status);
+
+  if (run.status === input.status) {
+    return { ...run };
+  }
+
+  if (input.status === 'running') {
+    return {
+      ...run,
+      status: input.status,
+      startedAt: run.startedAt ?? input.now,
+      finishedAt: null,
+      errorMessage: null,
+    };
+  }
+
+  if (isTerminalAgentRunStatus(input.status)) {
+    return {
+      ...run,
+      status: input.status,
+      finishedAt: input.now,
+      errorMessage: input.status === 'failed' ? input.errorMessage ?? null : null,
+    };
+  }
+
+  return {
+    ...run,
+    status: input.status,
+    errorMessage: null,
+  };
+}
+
+export type { AgentRunEvent, AgentRunEventType } from '../events/agent-run-event';

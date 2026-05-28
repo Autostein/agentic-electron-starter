@@ -1,4 +1,9 @@
 import type { AgentRunEvent, AgentRunRepository, AgentRunner } from '../../domain';
+import {
+  createAgentRunStatusEvent,
+  isTerminalAgentRunStatus,
+  transitionAgentRunStatus,
+} from '../../domain';
 
 export type CancelAgentRunDeps = {
   agentRunRepository: AgentRunRepository;
@@ -14,24 +19,28 @@ export async function cancelAgentRun(
 ): Promise<void> {
   const run = await deps.agentRunRepository.getRun(runId);
 
-  if (!run || ['succeeded', 'failed', 'cancelled'].includes(run.status)) {
+  if (!run || isTerminalAgentRunStatus(run.status)) {
     return;
   }
 
   const now = deps.now();
   await deps.agentRunner.cancel(runId);
-  await deps.agentRunRepository.updateRunStatus(runId, 'cancelled', {
-    finishedAt: now,
-    errorMessage: null,
+  const cancelledRun = transitionAgentRunStatus(run, {
+    status: 'cancelled',
+    now,
+  });
+  await deps.agentRunRepository.updateRunStatus(runId, cancelledRun.status, {
+    startedAt: cancelledRun.startedAt,
+    finishedAt: cancelledRun.finishedAt,
+    errorMessage: cancelledRun.errorMessage,
   });
 
-  const event: AgentRunEvent = {
+  const event: AgentRunEvent = createAgentRunStatusEvent({
     id: deps.createId(),
     runId,
-    type: 'status',
-    message: 'Run cancelled',
+    status: cancelledRun.status,
     createdAt: now,
-  };
+  });
   await deps.agentRunRepository.appendEvent(event);
   deps.publishEvent(event);
 }

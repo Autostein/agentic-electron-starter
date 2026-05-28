@@ -9,8 +9,15 @@ import type {
   AgentRun,
   AgentRunEvent,
   AgentRunRepository,
-  AgentRunStatus,
   AgentRunner,
+} from '../../domain';
+import {
+  createAgentRunCommitEvent,
+  createAgentRunErrorEvent,
+  createAgentRunEvent,
+  createAgentRunStatusEvent,
+  createQueuedAgentRun,
+  transitionAgentRunStatus,
 } from '../../domain';
 import type { WorkspaceRepository } from '@/core/workspaces/domain';
 
@@ -77,8 +84,7 @@ export async function startAgentRun(
 
   const runId = deps.createId();
   const now = deps.now();
-  const branchName = toRunBranchName(runId, input.prompt);
-  const run = await deps.agentRunRepository.createRun({
+  const queuedRun = createQueuedAgentRun({
     id: runId,
     workspaceId: workspace.id,
     workspacePath: workspace.path,
@@ -89,39 +95,56 @@ export async function startAgentRun(
     provider: input.provider,
     model: input.model,
     prompt: input.prompt,
-    maxIterations: input.maxIterations ?? 1,
-    branchName,
+    maxIterations: input.maxIterations,
     logFilePath: deps.createLogFilePath(runId),
     createdAt: now,
   });
+  let currentRun = await deps.agentRunRepository.createRun(queuedRun);
+  const run = currentRun;
 
   await deps.agentRunner.start(
     { run, profile },
     {
       onEvent: async (event) => {
         await recordEvent(
-          {
+          createAgentRunEvent({
             ...event,
             id: deps.createId(),
-          },
+          }),
           deps,
         );
       },
       onStatus: async (status, errorMessage) => {
         const statusAt = deps.now();
-        await deps.agentRunRepository.updateRunStatus(runId, status, {
-          startedAt: status === 'running' ? statusAt : undefined,
-          finishedAt: isTerminalStatus(status) ? statusAt : undefined,
-          errorMessage: errorMessage ?? null,
+        const persistedRun = await deps.agentRunRepository.getRun(runId);
+
+        if (!persistedRun) {
+          return;
+        }
+
+        currentRun = transitionAgentRunStatus(persistedRun, {
+          status,
+          now: statusAt,
+          errorMessage,
+        });
+
+        await deps.agentRunRepository.updateRunStatus(runId, currentRun.status, {
+          startedAt: currentRun.startedAt,
+          finishedAt: currentRun.finishedAt,
+          errorMessage: currentRun.errorMessage,
         });
         await recordEvent(
-          {
+          status === 'failed' ? createAgentRunErrorEvent({
             id: deps.createId(),
             runId,
-            type: status === 'failed' ? 'error' : 'status',
-            message: errorMessage ?? toStatusMessage(status),
             createdAt: statusAt,
-          },
+            message: errorMessage,
+          }) : createAgentRunStatusEvent({
+            id: deps.createId(),
+            runId,
+            status,
+            createdAt: statusAt,
+          }),
           deps,
         );
       },
@@ -133,13 +156,12 @@ export async function startAgentRun(
           createdAt: commitAt,
         });
         await recordEvent(
-          {
+          createAgentRunCommitEvent({
             id: deps.createId(),
             runId,
-            type: 'commit',
-            message: sha,
+            sha,
             createdAt: commitAt,
-          },
+          }),
           deps,
         );
       },
@@ -155,33 +177,4 @@ async function recordEvent(
 ): Promise<void> {
   await deps.agentRunRepository.appendEvent(event);
   deps.publishEvent(event);
-}
-
-function isTerminalStatus(status: AgentRunStatus): boolean {
-  return ['succeeded', 'failed', 'cancelled'].includes(status);
-}
-
-function toStatusMessage(status: AgentRunStatus): string {
-  switch (status) {
-    case 'queued':
-      return 'Run queued';
-    case 'running':
-      return 'Run started';
-    case 'succeeded':
-      return 'Run completed';
-    case 'failed':
-      return 'Run failed';
-    case 'cancelled':
-      return 'Run cancelled';
-  }
-}
-
-function toRunBranchName(runId: string, prompt: string): string {
-  const slug = prompt
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 36) || 'run';
-
-  return `agentic/${runId.slice(0, 8)}-${slug}`;
 }
