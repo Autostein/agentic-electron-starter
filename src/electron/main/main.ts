@@ -2,17 +2,14 @@ import { fileURLToPath } from 'node:url';
 import { app, BrowserWindow, dialog } from 'electron';
 import started from 'electron-squirrel-startup';
 import type { AgentRunEvent } from '@/core/agent-runs/domain';
-import type { DockerImageBuildEvent } from '@/core/agent-runtime/domain';
 import { AGENT_RUNS_IPC_CHANNELS } from '@/contracts/ipc/agent-runs.contract';
-import { AGENT_RUNTIME_IPC_CHANNELS } from '@/contracts/ipc/agent-runtime.contract';
+import {
+  AGENT_RUNTIME_IPC_CHANNELS,
+  type DockerImageBuildEventResult,
+} from '@/contracts/ipc/agent-runtime.contract';
 import { closeMainDatabase, initializeMainDatabase } from '@/infrastructure/main/persistence/db/client';
-import { assertRuntimeProfileAuthAvailable } from '@/infrastructure/main/agent-runtime/cli-auth-paths';
-import { createMainProcessDeps } from './deps';
-import { registerAgentRunsIpcHandlers } from './ipc/register-agent-runs-ipc';
-import { registerAgentRuntimeIpcHandlers } from './ipc/register-agent-runtime-ipc';
-import { registerAppInfoIpcHandlers } from './ipc/register-app-info-ipc';
-import { registerNotesIpcHandlers } from './ipc/register-notes-ipc';
-import { registerWorkspacesIpcHandlers } from './ipc/register-workspaces-ipc';
+import { createMainProcessDeps } from './bootstrap/create-main-process-deps';
+import { registerIpcHandlers } from './bootstrap/register-ipc-handlers';
 import { getErrorMessage } from './shared/errors';
 import { createMainWindow } from './window';
 
@@ -22,45 +19,23 @@ if (started) {
 
 app.whenReady()
   .then(() => {
-    initializeMainDatabase({
+    const databaseOptions = {
       userDataPath: app.getPath('userData'),
       resourcesPath: process.resourcesPath,
       isPackaged: app.isPackaged,
-    });
+    };
+    initializeMainDatabase(databaseOptions);
 
     const deps = createMainProcessDeps({
-      userDataPath: app.getPath('userData'),
-      resourcesPath: process.resourcesPath,
-      isPackaged: app.isPackaged,
+      ...databaseOptions,
       workerPath: fileURLToPath(new URL('./agent-runner-worker.js', import.meta.url)),
     });
-    registerAppInfoIpcHandlers({ appInfoProvider: deps.appInfoProvider });
-    registerNotesIpcHandlers({ noteRepository: deps.noteRepository });
-    registerWorkspacesIpcHandlers({
-      gitRepositoryInspector: deps.gitRepositoryInspector,
-      workspaceRepository: deps.workspaceRepository,
+
+    registerIpcHandlers({
+      deps,
       pickDirectory,
-      now: Date.now,
-    });
-    registerAgentRuntimeIpcHandlers({
-      dockerImageBuilder: deps.dockerImageBuilder,
-      profileRepository: deps.profileRepository,
-      copyStarterProfile: (profileId) => deps.runtimeProfileFiles.copyStarterProfile(profileId),
-      runtimeProfileFiles: deps.runtimeProfileFiles,
-      validateRuntimeProfile: assertRuntimeProfileAuthAvailable,
+      publishAgentRunEvent,
       publishBuildEvent,
-      now: Date.now,
-    });
-    registerAgentRunsIpcHandlers({
-      agentRunRepository: deps.agentRunRepository,
-      agentRunner: deps.agentRunner,
-      gitCommitReadService: deps.gitCommitReadService,
-      workspaceRepository: deps.workspaceRepository,
-      profileRepository: deps.profileRepository,
-      dockerImageBuilder: deps.dockerImageBuilder,
-      validateRuntimeProfile: assertRuntimeProfileAuthAvailable,
-      createLogFilePath: deps.createLogFilePath,
-      publishEvent: publishAgentRunEvent,
       now: Date.now,
     });
 
@@ -101,7 +76,7 @@ function publishAgentRunEvent(event: AgentRunEvent): void {
   }
 }
 
-function publishBuildEvent(event: DockerImageBuildEvent & { profileId: string }): void {
+function publishBuildEvent(event: DockerImageBuildEventResult): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(AGENT_RUNTIME_IPC_CHANNELS.buildEvent, event);
   }
