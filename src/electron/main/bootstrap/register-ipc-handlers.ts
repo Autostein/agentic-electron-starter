@@ -1,5 +1,8 @@
 import type { AgentRunEvent } from '@/core/agent-runs/domain';
-import { assertRuntimeProfileAuthAvailable } from '@/infrastructure/main/agent-runtime/cli-auth-paths';
+import {
+  assertRuntimeProfileAuthAvailable,
+  listProviderAuthStatuses as getProviderAuthStatuses,
+} from '@/infrastructure/main/agent-runtime/cli-auth-paths';
 import type { DockerImageBuildEventResult } from '@/contracts/ipc/agent-runtime.contract';
 import { registerAgentRunsIpcHandlers } from '../ipc/register-agent-runs-ipc';
 import { registerAgentRuntimeIpcHandlers } from '../ipc/register-agent-runtime-ipc';
@@ -30,6 +33,7 @@ export function registerIpcHandlers(options: RegisterIpcHandlersOptions): void {
   registerAgentRuntimeIpcHandlers({
     dockerImageBuilder: deps.agentRuntime.dockerImageBuilder,
     profileRepository: deps.agentRuntime.profileRepository,
+    listProviderAuthStatuses: () => getProviderAuthStatuses({ now: options.now }),
     copyStarterProfile: (profileId) => (
       deps.agentRuntime.runtimeProfileFiles.copyStarterProfile(profileId)
     ),

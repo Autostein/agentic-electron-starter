@@ -7,6 +7,10 @@ import type {
   UpdateRuntimeProfileDockerfileInput,
 } from '@/contracts/ipc/agent-runtime.contract';
 
+export function listAgentProviderAuthStatuses() {
+  return window.desktop.agentRuntime.listProviderAuthStatuses();
+}
+
 export function listAgentRuntimeProfiles() {
   return window.desktop.agentRuntime.listProfiles();
 }

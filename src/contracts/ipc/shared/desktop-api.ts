@@ -14,6 +14,7 @@ import type {
   WatchAgentRunInput,
 } from '../agent-runs.contract';
 import type {
+  AgentProviderAuthStatusResult,
   AgentRuntimeProfileResult,
   DuplicateStarterRuntimeProfileInput,
   DockerImageBuildEventResult,
@@ -53,6 +54,7 @@ export type DesktopApi = {
     ) => DesktopUnsubscribe;
   };
   agentRuntime: {
+    listProviderAuthStatuses: () => Promise<AgentProviderAuthStatusResult[]>;
     listProfiles: () => Promise<AgentRuntimeProfileResult[]>;
     getProfile: (input: GetAgentRuntimeProfileInput) => Promise<AgentRuntimeProfileResult>;
     updateProfile: (

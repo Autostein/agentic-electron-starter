@@ -1,13 +1,15 @@
-import { Box, FolderGit2, type LucideIcon } from 'lucide-react';
+import { Box, FolderGit2, KeyRound, type LucideIcon } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router';
+import { ProviderAuthPage } from '../../agent-runtime/ui/ProviderAuthPage';
 import { RuntimesPage } from '../../agent-runtime/ui/RuntimesPage';
 import { WorkspacesPage } from '../../workspaces/ui/WorkspacesPage';
 
-type ConfigurationTab = 'workspaces' | 'runtimes';
+type ConfigurationTab = 'workspaces' | 'runtimes' | 'providers';
 
 const tabs: Array<{ id: ConfigurationTab; label: string; icon: LucideIcon }> = [
   { id: 'workspaces', label: 'Workspaces', icon: FolderGit2 },
   { id: 'runtimes', label: 'Runtimes', icon: Box },
+  { id: 'providers', label: 'Providers', icon: KeyRound },
 ];
 
 export function ConfigurationPage() {
@@ -49,12 +51,18 @@ export function ConfigurationPage() {
       </div>
 
       <div className="mt-6">
-        {activeTab === 'workspaces' ? <WorkspacesPage /> : <RuntimesPage />}
+        {activeTab === 'workspaces' && <WorkspacesPage />}
+        {activeTab === 'runtimes' && <RuntimesPage />}
+        {activeTab === 'providers' && <ProviderAuthPage />}
       </div>
     </section>
   );
 }
 
 function toConfigurationTab(tab: string | null): ConfigurationTab {
-  return tab === 'runtimes' ? 'runtimes' : 'workspaces';
+  if (tab === 'runtimes' || tab === 'providers') {
+    return tab;
+  }
+
+  return 'workspaces';
 }

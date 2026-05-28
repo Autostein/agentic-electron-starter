@@ -62,6 +62,7 @@ describe('AgentRunsPage', () => {
         onEvent: vi.fn(() => () => undefined),
       },
       agentRuntime: {
+        listProviderAuthStatuses: vi.fn(),
         listProfiles: vi.fn(async () => [starterProfile]),
         getProfile: vi.fn(async () => starterProfile),
         updateProfile: vi.fn(),

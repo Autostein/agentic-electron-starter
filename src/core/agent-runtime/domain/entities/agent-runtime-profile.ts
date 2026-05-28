@@ -2,6 +2,19 @@ import type { AppErrorCode } from '@/shared/app-errors';
 
 export type AgentProviderId = 'claude-code' | 'codex';
 
+export type AgentProviderAuthState = 'valid' | 'missing' | 'invalid' | 'unknown';
+
+export type AgentProviderAuthStatus = {
+  provider: AgentProviderId;
+  label: string;
+  cliAuthPath: string;
+  cliVersion: string | null;
+  state: AgentProviderAuthState;
+  connected: boolean;
+  message: string;
+  checkedAt: number;
+};
+
 export type AgentRuntimeProfileSourceKind = 'bundled-starter' | 'user-managed-copy';
 
 export type AgentRuntimeProfile = {

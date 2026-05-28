@@ -1,4 +1,6 @@
 export type {
+  AgentProviderAuthState,
+  AgentProviderAuthStatus,
   AgentProviderId,
   AgentRuntimeProfile,
   AgentRuntimeProfileSourceKind,

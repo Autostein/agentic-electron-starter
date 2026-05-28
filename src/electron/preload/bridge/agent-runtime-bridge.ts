@@ -2,6 +2,7 @@ import { ipcRenderer } from 'electron';
 import {
   AGENT_RUNTIME_IPC_CHANNELS,
   DockerImageBuildEventSchema,
+  type AgentProviderAuthStatusResult,
   type AgentRuntimeProfileResult,
   type DockerImageBuildResult,
   type DockerImageStatusResult,
@@ -13,6 +14,9 @@ import type { IpcRendererEvent } from 'electron';
 import { invokeIpc } from './invoke-ipc';
 
 export const agentRuntimeBridge: DesktopApi['agentRuntime'] = {
+  listProviderAuthStatuses: () => invokeIpc<AgentProviderAuthStatusResult[]>(
+    AGENT_RUNTIME_IPC_CHANNELS.listProviderAuthStatuses,
+  ),
   listProfiles: () => invokeIpc<AgentRuntimeProfileResult[]>(
     AGENT_RUNTIME_IPC_CHANNELS.listProfiles,
   ),

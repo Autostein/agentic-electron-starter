@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type {
+  AgentProviderAuthStatus,
   AgentRuntimeProfile,
   AgentRuntimeProfileRepository,
   BuildDockerImageInput,
@@ -134,6 +135,36 @@ class FakeRuntimeProfileFiles {
 }
 
 describe('agent runtime IPC handlers', () => {
+  it('lists provider auth statuses', async () => {
+    const handlers = createHandlers({
+      listProviderAuthStatuses: async () => [
+        {
+          provider: 'claude-code',
+          label: 'Claude Code',
+          cliAuthPath: '/home/dev/.claude',
+          cliVersion: '2.1.148 (Claude Code)',
+          state: 'valid',
+          connected: true,
+          message: 'Authenticated.',
+          checkedAt: 123,
+        },
+      ],
+    });
+
+    await expect(handlers.listProviderAuthStatuses()).resolves.toEqual([
+      {
+        provider: 'claude-code',
+        label: 'Claude Code',
+        cliAuthPath: '/home/dev/.claude',
+        cliVersion: '2.1.148 (Claude Code)',
+        state: 'valid',
+        connected: true,
+        message: 'Authenticated.',
+        checkedAt: 123,
+      },
+    ]);
+  });
+
   it('lists profiles and returns Docker image status for the selected profile', async () => {
     const handlers = createHandlers();
 
@@ -266,6 +297,7 @@ function createHandlers(overrides: Partial<Parameters<typeof createAgentRuntimeI
   return createAgentRuntimeIpcHandlers({
     dockerImageBuilder: new FakeDockerImageBuilder(),
     profileRepository: new FakeProfileRepository(),
+    listProviderAuthStatuses: async (): Promise<AgentProviderAuthStatus[]> => [],
     copyStarterProfile: (profileId) => `/profiles/${profileId}`,
     runtimeProfileFiles: new FakeRuntimeProfileFiles(),
     validateRuntimeProfile: () => undefined,

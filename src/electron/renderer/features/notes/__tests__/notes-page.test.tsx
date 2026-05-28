@@ -36,6 +36,7 @@ describe('NotesPage', () => {
         onEvent: vi.fn(() => () => undefined),
       },
       agentRuntime: {
+        listProviderAuthStatuses: vi.fn(),
         listProfiles: vi.fn(),
         getProfile: vi.fn(),
         updateProfile: vi.fn(),

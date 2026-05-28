@@ -10,6 +10,7 @@ import {
   getAgentRuntimeImageStatus,
   getAgentRuntimeProfile,
   getAgentRuntimeProfileDockerfile,
+  listAgentProviderAuthStatuses,
   listAgentRuntimeProfiles,
   onAgentRuntimeBuildEvent,
   openAgentRuntimeProfileFolder,
@@ -19,8 +20,16 @@ import {
 } from '../client/agent-runtime-client';
 
 export const agentRuntimeProfilesQueryKey = ['agent-runtime-profiles'] as const;
+export const agentProviderAuthStatusesQueryKey = ['agent-provider-auth-statuses'] as const;
 export const agentRuntimeImageStatusQueryKey = ['agent-runtime-image-status'] as const;
 export const agentRuntimeDockerfileQueryKey = ['agent-runtime-dockerfile'] as const;
+
+export function useAgentProviderAuthStatuses() {
+  return useQuery({
+    queryKey: agentProviderAuthStatusesQueryKey,
+    queryFn: listAgentProviderAuthStatuses,
+  });
+}
 
 export function useAgentRuntimeProfiles() {
   return useQuery({

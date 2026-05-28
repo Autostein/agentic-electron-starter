@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const AGENT_RUNTIME_IPC_CHANNELS = {
+  listProviderAuthStatuses: 'agent-runtime:list-provider-auth-statuses',
   listProfiles: 'agent-runtime:list-profiles',
   getProfile: 'agent-runtime:get-profile',
   updateProfile: 'agent-runtime:update-profile',
@@ -18,6 +19,22 @@ export const AgentRuntimeProfileSourceKindSchema = z.enum([
   'bundled-starter',
   'user-managed-copy',
 ]);
+
+export const AgentRuntimeProviderSchema = z.enum(['claude-code', 'codex']);
+export const AgentProviderAuthStateSchema = z.enum(['valid', 'missing', 'invalid', 'unknown']);
+
+export const AgentProviderAuthStatusSchema = z.object({
+  provider: AgentRuntimeProviderSchema,
+  label: z.string(),
+  cliAuthPath: z.string(),
+  cliVersion: z.string().nullable(),
+  state: AgentProviderAuthStateSchema,
+  connected: z.boolean(),
+  message: z.string(),
+  checkedAt: z.number(),
+});
+
+export const AgentProviderAuthStatusListResultSchema = z.array(AgentProviderAuthStatusSchema);
 
 export const AgentRuntimeProfileResultSchema = z.object({
   id: z.string(),
@@ -94,6 +111,8 @@ export const DockerImageStatusResultSchema = z.object({
 });
 
 export type AgentRuntimeProfileSourceKindResult = z.infer<typeof AgentRuntimeProfileSourceKindSchema>;
+export type AgentProviderAuthStateResult = z.infer<typeof AgentProviderAuthStateSchema>;
+export type AgentProviderAuthStatusResult = z.infer<typeof AgentProviderAuthStatusSchema>;
 export type AgentRuntimeProfileResult = z.infer<typeof AgentRuntimeProfileResultSchema>;
 export type GetAgentRuntimeProfileInput = z.infer<typeof GetAgentRuntimeProfileInputSchema>;
 export type UpdateAgentRuntimeProfileInput = z.infer<typeof UpdateAgentRuntimeProfileInputSchema>;

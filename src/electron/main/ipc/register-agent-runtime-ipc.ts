@@ -6,6 +6,7 @@ import { getSandboxImageStatus } from '@/core/agent-runtime/application/use-case
 import { listRuntimeProfiles } from '@/core/agent-runtime/application/use-cases/list-runtime-profiles';
 import { updateRuntimeProfile } from '@/core/agent-runtime/application/use-cases/update-runtime-profile';
 import type {
+  AgentProviderAuthStatus,
   AgentRuntimeProfile,
   AgentRuntimeProfileRepository,
   DockerImageBuilder,
@@ -13,6 +14,7 @@ import type {
 } from '@/core/agent-runtime/domain';
 import {
   AGENT_RUNTIME_IPC_CHANNELS,
+  AgentProviderAuthStatusListResultSchema,
   AgentRuntimeProfileListResultSchema,
   AgentRuntimeProfileResultSchema,
   DockerImageBuildResultSchema,
@@ -26,6 +28,7 @@ import {
   UpdateRuntimeProfileDockerfileResultSchema,
   UpdateAgentRuntimeProfileInputSchema,
   type AgentRuntimeProfileResult,
+  type AgentProviderAuthStatusResult,
   type DockerImageBuildEventResult,
   type DockerImageBuildResult,
   type DockerImageStatusResult,
@@ -39,6 +42,7 @@ import { registerIpcHandler } from './ipc-handler-wrapper';
 export type AgentRuntimeIpcDeps = {
   dockerImageBuilder: DockerImageBuilder;
   profileRepository: AgentRuntimeProfileRepository;
+  listProviderAuthStatuses: () => Promise<AgentProviderAuthStatus[]>;
   copyStarterProfile: (profileId: string) => string;
   runtimeProfileFiles: {
     readDockerfile: (profile: AgentRuntimeProfile) => RuntimeProfileDockerfile;
@@ -55,6 +59,9 @@ export function createAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps) {
   let activeBuild: Promise<DockerImageBuildResult> | null = null;
 
   return {
+    listProviderAuthStatuses: async (): Promise<AgentProviderAuthStatusResult[]> => {
+      return AgentProviderAuthStatusListResultSchema.parse(await deps.listProviderAuthStatuses());
+    },
     listProfiles: async (): Promise<AgentRuntimeProfileResult[]> => {
       const profiles = await listRuntimeProfiles({ profileRepository: deps.profileRepository });
       return AgentRuntimeProfileListResultSchema.parse(profiles);
@@ -185,6 +192,10 @@ export function createAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps) {
 
 export function registerAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps): void {
   const handlers = createAgentRuntimeIpcHandlers(deps);
+  registerIpcHandler(
+    AGENT_RUNTIME_IPC_CHANNELS.listProviderAuthStatuses,
+    handlers.listProviderAuthStatuses,
+  );
   registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.listProfiles, handlers.listProfiles);
   registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.getProfile, handlers.getProfile);
   registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.updateProfile, handlers.updateProfile);
