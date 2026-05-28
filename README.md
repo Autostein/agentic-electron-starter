@@ -41,6 +41,7 @@ Electron 42 downloads its binary lazily. App scripts run `pnpm ensure:electron` 
 src/
   core/                   Capability slices with domain and application code
   contracts/ipc/          IPC channels, schemas, DTOs
+  shared/                 Runtime-free cross-cutting primitives, e.g. AppError
   infrastructure/main/    SQLite and privileged adapters
   electron/main/          Electron lifecycle and IPC registration
   electron/preload/       Typed contextBridge API
