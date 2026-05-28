@@ -25,6 +25,14 @@ module.exports = {
       },
     },
     {
+      name: 'shared-is-runtime-free',
+      severity: 'error',
+      from: { path: '^src/shared' },
+      to: {
+        path: '^(@ai-hero/sandcastle|electron|node:|fs(?:/|$)|path(?:/|$)|crypto(?:/|$)|os(?:/|$)|child_process(?:/|$)|react$|react-dom$|src/(core|contracts|electron|infrastructure))',
+      },
+    },
+    {
       name: 'core-is-runtime-free',
       severity: 'error',
       from: { path: '^src/core' },
