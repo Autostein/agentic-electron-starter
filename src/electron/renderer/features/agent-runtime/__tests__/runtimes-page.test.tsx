@@ -41,8 +41,6 @@ describe('RuntimesPage', () => {
         sourceKind: 'bundled-starter',
         profilePath: null,
         imageName: 'agentic:starter',
-        claudeDefaultModel: 'claude-opus-4-7',
-        codexDefaultModel: 'gpt-5.4',
         claudeAuthMountEnabled: false,
         codexAuthMountEnabled: false,
         createdAt: 1,
@@ -151,7 +149,8 @@ describe('RuntimesPage', () => {
     renderRuntimesPage();
 
     expect(await screen.findByText('Starter')).toBeTruthy();
-    expect(screen.getByDisplayValue('claude-opus-4-7')).toBeTruthy();
+    expect(screen.queryByText('Claude model')).toBeNull();
+    expect(screen.queryByText('Codex model')).toBeNull();
     expect(await screen.findByRole('button', { name: /duplicate starter to edit/i })).toBeTruthy();
     expect(screen.getByLabelText('Dockerfile editor')).toHaveAttribute('readonly');
 

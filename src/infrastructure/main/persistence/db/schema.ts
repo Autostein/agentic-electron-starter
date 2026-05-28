@@ -39,8 +39,6 @@ export const agentRuntimeProfiles = sqliteTable('agent_runtime_profiles', {
   sourceKind: text('source_kind').notNull(),
   profilePath: text('profile_path'),
   imageName: text('image_name').notNull(),
-  claudeDefaultModel: text('claude_default_model').notNull(),
-  codexDefaultModel: text('codex_default_model').notNull(),
   claudeAuthMountEnabled: integer('claude_auth_mount_enabled', { mode: 'boolean' }).notNull(),
   codexAuthMountEnabled: integer('codex_auth_mount_enabled', { mode: 'boolean' }).notNull(),
   createdAt: integer('created_at').notNull().default(nowMs),

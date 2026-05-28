@@ -25,8 +25,6 @@ export const AgentRuntimeProfileResultSchema = z.object({
   sourceKind: AgentRuntimeProfileSourceKindSchema,
   profilePath: z.string().nullable(),
   imageName: z.string(),
-  claudeDefaultModel: z.string(),
-  codexDefaultModel: z.string(),
   claudeAuthMountEnabled: z.boolean(),
   codexAuthMountEnabled: z.boolean(),
   createdAt: z.number(),
@@ -42,8 +40,6 @@ export const GetAgentRuntimeProfileInputSchema = z.object({
 export const UpdateAgentRuntimeProfileInputSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).optional(),
-  claudeDefaultModel: z.string().min(1).optional(),
-  codexDefaultModel: z.string().min(1).optional(),
   claudeAuthMountEnabled: z.boolean().optional(),
   codexAuthMountEnabled: z.boolean().optional(),
 });

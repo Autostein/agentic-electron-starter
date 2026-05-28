@@ -40,8 +40,6 @@ export async function duplicateStarterRuntimeProfile(
       sourceKind: 'user-managed-copy',
       profilePath,
       imageName: toRuntimeProfileImageName(id),
-      claudeDefaultModel: starter.claudeDefaultModel,
-      codexDefaultModel: starter.codexDefaultModel,
       claudeAuthMountEnabled: false,
       codexAuthMountEnabled: false,
     },

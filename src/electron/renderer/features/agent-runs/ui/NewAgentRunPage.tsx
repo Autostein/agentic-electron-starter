@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { FolderOpen, Play } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import type { AgentProviderResult } from '@/contracts/ipc/agent-runs.contract';
@@ -25,37 +25,12 @@ export function NewAgentRunPage() {
   const [model, setModel] = useState('');
   const [prompt, setPrompt] = useState('');
   const [maxIterations, setMaxIterations] = useState(1);
+  const effectiveWorkspaceId = workspaceId || workspaces.data?.[0]?.id || '';
   const selectedProfile = profiles.data?.find((profile) => profile.id === runtimeProfileId)
     ?? profiles.data?.[0];
   const effectiveRuntimeProfileId = runtimeProfileId || selectedProfile?.id || '';
   const imageStatus = useAgentRuntimeImageStatus(effectiveRuntimeProfileId);
   const buildImage = useBuildAgentRuntimeImage(effectiveRuntimeProfileId);
-
-  const defaultModel = useMemo(() => {
-    if (!selectedProfile) {
-      return '';
-    }
-
-    return provider === 'claude-code'
-      ? selectedProfile.claudeDefaultModel
-      : selectedProfile.codexDefaultModel;
-  }, [provider, selectedProfile]);
-
-  useEffect(() => {
-    setModel(defaultModel);
-  }, [defaultModel]);
-
-  useEffect(() => {
-    if (!workspaceId && workspaces.data?.[0]) {
-      setWorkspaceId(workspaces.data[0].id);
-    }
-  }, [workspaceId, workspaces.data]);
-
-  useEffect(() => {
-    if (!runtimeProfileId && profiles.data?.[0]) {
-      setRuntimeProfileId(profiles.data[0].id);
-    }
-  }, [profiles.data, runtimeProfileId]);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,7 +40,14 @@ export function NewAgentRunPage() {
     }
 
     startRun.mutate(
-      { workspaceId, runtimeProfileId: effectiveRuntimeProfileId, provider, model, prompt, maxIterations },
+      {
+        workspaceId: effectiveWorkspaceId,
+        runtimeProfileId: effectiveRuntimeProfileId,
+        provider,
+        model,
+        prompt,
+        maxIterations,
+      },
       {
         onSuccess: (run) => {
           navigate(`/runs/${run.id}`);
@@ -74,7 +56,7 @@ export function NewAgentRunPage() {
     );
   };
   const canStartRun = Boolean(
-    workspaceId
+    effectiveWorkspaceId
       && effectiveRuntimeProfileId
       && model.trim()
       && prompt.trim()
@@ -96,7 +78,7 @@ export function NewAgentRunPage() {
           <span className="text-sm font-medium text-zinc-200">Workspace</span>
           <div className="mt-2 flex gap-2">
             <select
-              value={workspaceId}
+              value={effectiveWorkspaceId}
               onChange={(event) => setWorkspaceId(event.target.value)}
               className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-400"
             >

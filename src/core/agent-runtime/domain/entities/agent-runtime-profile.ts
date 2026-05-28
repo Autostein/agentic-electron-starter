@@ -10,8 +10,6 @@ export type AgentRuntimeProfile = {
   sourceKind: AgentRuntimeProfileSourceKind;
   profilePath: string | null;
   imageName: string;
-  claudeDefaultModel: string;
-  codexDefaultModel: string;
   claudeAuthMountEnabled: boolean;
   codexAuthMountEnabled: boolean;
   createdAt: number;
@@ -24,8 +22,6 @@ export type UpdateAgentRuntimeProfile = Partial<
   Pick<
     AgentRuntimeProfile,
     | 'name'
-    | 'claudeDefaultModel'
-    | 'codexDefaultModel'
     | 'claudeAuthMountEnabled'
     | 'codexAuthMountEnabled'
   >
@@ -46,8 +42,6 @@ export type DockerImageStatus = {
 };
 
 export const STARTER_RUNTIME_PROFILE_ID = 'starter';
-export const DEFAULT_CLAUDE_MODEL = 'claude-opus-4-7';
-export const DEFAULT_CODEX_MODEL = 'gpt-5.4';
 
 export function toRuntimeProfileImageName(profileId: string): string {
   return `agentic-electron-starter-runtime:${profileId}`;

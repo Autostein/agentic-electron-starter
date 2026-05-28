@@ -19,8 +19,6 @@ export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileR
             source_kind AS sourceKind,
             profile_path AS profilePath,
             image_name AS imageName,
-            claude_default_model AS claudeDefaultModel,
-            codex_default_model AS codexDefaultModel,
             claude_auth_mount_enabled AS claudeAuthMountEnabled,
             codex_auth_mount_enabled AS codexAuthMountEnabled,
             created_at AS createdAt,
@@ -44,8 +42,6 @@ export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileR
             source_kind AS sourceKind,
             profile_path AS profilePath,
             image_name AS imageName,
-            claude_default_model AS claudeDefaultModel,
-            codex_default_model AS codexDefaultModel,
             claude_auth_mount_enabled AS claudeAuthMountEnabled,
             codex_auth_mount_enabled AS codexAuthMountEnabled,
             created_at AS createdAt,
@@ -72,14 +68,12 @@ export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileR
             source_kind,
             profile_path,
             image_name,
-            claude_default_model,
-            codex_default_model,
             claude_auth_mount_enabled,
             codex_auth_mount_enabled,
             created_at,
             updated_at
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
       )
       .run(
@@ -88,8 +82,6 @@ export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileR
         input.sourceKind,
         input.profilePath,
         input.imageName,
-        input.claudeDefaultModel,
-        input.codexDefaultModel,
         Number(input.claudeAuthMountEnabled),
         Number(input.codexAuthMountEnabled),
         timestamps.createdAt,
@@ -124,8 +116,6 @@ export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileR
           UPDATE agent_runtime_profiles
           SET
             name = ?,
-            claude_default_model = ?,
-            codex_default_model = ?,
             claude_auth_mount_enabled = ?,
             codex_auth_mount_enabled = ?,
             updated_at = ?
@@ -134,8 +124,6 @@ export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileR
       )
       .run(
         next.name,
-        next.claudeDefaultModel,
-        next.codexDefaultModel,
         Number(next.claudeAuthMountEnabled),
         Number(next.codexAuthMountEnabled),
         next.updatedAt,
@@ -152,8 +140,6 @@ type AgentRuntimeProfileRow = {
   sourceKind: AgentRuntimeProfileSourceKind;
   profilePath: string | null;
   imageName: string;
-  claudeDefaultModel: string;
-  codexDefaultModel: string;
   claudeAuthMountEnabled: number;
   codexAuthMountEnabled: number;
   createdAt: number;
@@ -167,8 +153,6 @@ function toProfile(row: AgentRuntimeProfileRow): AgentRuntimeProfile {
     sourceKind: row.sourceKind,
     profilePath: row.profilePath,
     imageName: row.imageName,
-    claudeDefaultModel: row.claudeDefaultModel,
-    codexDefaultModel: row.codexDefaultModel,
     claudeAuthMountEnabled: Boolean(row.claudeAuthMountEnabled),
     codexAuthMountEnabled: Boolean(row.codexAuthMountEnabled),
     createdAt: row.createdAt,

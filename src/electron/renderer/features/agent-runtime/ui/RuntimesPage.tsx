@@ -129,8 +129,6 @@ function RuntimeProfileForm({
   const saveBeforeBuildRef = useRef<() => Promise<boolean>>(async () => true);
   const [form, setForm] = useState({
     name: profile.name,
-    claudeDefaultModel: profile.claudeDefaultModel,
-    codexDefaultModel: profile.codexDefaultModel,
     claudeAuthMountEnabled: profile.claudeAuthMountEnabled,
     codexAuthMountEnabled: profile.codexAuthMountEnabled,
   });
@@ -161,19 +159,6 @@ function RuntimeProfileForm({
             <ReadOnlyField label="Source" value={toSourceLabel(profile)} />
             <ReadOnlyField label="Profile folder" value={profile.profilePath ?? 'Bundled starter'} />
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <TextField
-            label="Claude model"
-            value={form.claudeDefaultModel}
-            onChange={(claudeDefaultModel) => setForm((current) => ({ ...current, claudeDefaultModel }))}
-          />
-          <TextField
-            label="Codex model"
-            value={form.codexDefaultModel}
-            onChange={(codexDefaultModel) => setForm((current) => ({ ...current, codexDefaultModel }))}
-          />
         </div>
 
         <div className="grid grid-cols-2 gap-3">

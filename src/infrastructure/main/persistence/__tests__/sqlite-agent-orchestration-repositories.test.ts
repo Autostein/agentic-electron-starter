@@ -41,7 +41,7 @@ describe('SQLite agent orchestration repositories', () => {
     const starter = await profiles.getProfile('starter');
     const updatedProfile = await profiles.updateProfile(
       'starter',
-      { codexDefaultModel: 'gpt-5.4-test' },
+      { codexAuthMountEnabled: true },
       200,
     );
     const copy = await profiles.createProfile(
@@ -51,8 +51,6 @@ describe('SQLite agent orchestration repositories', () => {
         sourceKind: 'user-managed-copy',
         profilePath: path.join(userDataPath, 'agent-runtime-profiles', 'profile-copy'),
         imageName: 'agentic-electron-starter-runtime:profile-copy',
-        claudeDefaultModel: 'claude-opus-4-7',
-        codexDefaultModel: 'gpt-5.4',
         claudeAuthMountEnabled: false,
         codexAuthMountEnabled: false,
       },
@@ -89,7 +87,7 @@ describe('SQLite agent orchestration repositories', () => {
 
     await expect(workspaces.listWorkspaces()).resolves.toHaveLength(1);
     expect(starter?.id).toBe('starter');
-    expect(updatedProfile.codexDefaultModel).toBe('gpt-5.4-test');
+    expect(updatedProfile.codexAuthMountEnabled).toBe(true);
     await expect(profiles.listProfiles()).resolves.toHaveLength(2);
     expect((await runs.getRun(run.id))?.status).toBe('running');
     expect(await runs.getRun(run.id)).toMatchObject({

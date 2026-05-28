@@ -15,8 +15,6 @@ const starterProfile = {
   sourceKind: 'bundled-starter' as const,
   profilePath: null,
   imageName: 'agentic:starter',
-  claudeDefaultModel: 'claude-opus-4-7',
-  codexDefaultModel: 'gpt-5.4',
   claudeAuthMountEnabled: false,
   codexAuthMountEnabled: false,
   createdAt: 1,
@@ -132,6 +130,9 @@ describe('AgentRunsPage', () => {
 
     fireEvent.change(await screen.findByLabelText('Prompt'), {
       target: { value: 'Document the repo' },
+    });
+    fireEvent.change(screen.getByLabelText('Model'), {
+      target: { value: 'gpt-5.4' },
     });
 
     expect(screen.getByRole('button', { name: /start run/i })).toBeDisabled();

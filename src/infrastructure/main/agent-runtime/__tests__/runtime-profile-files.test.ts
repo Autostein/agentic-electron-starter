@@ -18,8 +18,6 @@ const starterProfile: AgentRuntimeProfile = {
   sourceKind: 'bundled-starter',
   profilePath: null,
   imageName: 'agentic:starter',
-  claudeDefaultModel: 'claude-opus-4-7',
-  codexDefaultModel: 'gpt-5.4',
   claudeAuthMountEnabled: false,
   codexAuthMountEnabled: false,
   createdAt: 1,
