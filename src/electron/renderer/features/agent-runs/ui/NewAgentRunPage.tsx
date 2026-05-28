@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FolderOpen, Play } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import type { AgentProviderResult } from '@/contracts/ipc/agent-runs.contract';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import {
   useAgentRuntimeImageStatus,
   useAgentRuntimeProfiles,
@@ -184,7 +185,7 @@ export function NewAgentRunPage() {
           <Play aria-hidden="true" className="h-4 w-4" />
           Start run
         </button>
-        {startRun.error && <p className="text-sm text-red-300">{startRun.error.message}</p>}
+        {startRun.error && <p className="text-sm text-red-300">{formatRendererError(startRun.error)}</p>}
       </form>
     </section>
   );

@@ -44,6 +44,7 @@ describe('LocalDockerImageBuilder', () => {
       available: false,
       checkedAt: 123,
       errorMessage: 'Image not found locally.',
+      errorCode: 'IMAGE_MISSING',
     });
   });
 
@@ -59,6 +60,7 @@ describe('LocalDockerImageBuilder', () => {
       available: false,
       checkedAt: 123,
       errorMessage: 'spawn docker ENOENT',
+      errorCode: 'DOCKER_UNAVAILABLE',
     });
   });
 });

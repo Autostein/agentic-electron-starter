@@ -2,6 +2,7 @@ import type { FormEvent } from 'react';
 import { useRef, useState } from 'react';
 import { Copy, Save } from 'lucide-react';
 import type { AgentRuntimeProfileResult } from '@/contracts/ipc/agent-runtime.contract';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import {
   useAgentRuntimeImageStatus,
   useAgentRuntimeProfiles,
@@ -51,7 +52,7 @@ export function RuntimesPage() {
   }
 
   if (profiles.error) {
-    return <p className="text-sm text-red-300">{profiles.error.message}</p>;
+    return <p className="text-sm text-red-300">{formatRendererError(profiles.error)}</p>;
   }
 
   return (
@@ -196,7 +197,9 @@ function RuntimeProfileForm({
           <Save aria-hidden="true" className="h-4 w-4" />
           Save
         </button>
-        {updateProfile.error && <p className="text-sm text-red-300">{updateProfile.error.message}</p>}
+        {updateProfile.error && (
+          <p className="text-sm text-red-300">{formatRendererError(updateProfile.error)}</p>
+        )}
       </form>
 
       <div className="mt-6">

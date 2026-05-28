@@ -1,12 +1,11 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router';
+import { formatRendererError } from '../shared/errors';
 
 export function RouteError() {
   const error = useRouteError();
   const message = isRouteErrorResponse(error)
     ? `${error.status} ${error.statusText}`
-    : error instanceof Error
-      ? error.message
-      : 'Unknown route error';
+    : formatRendererError(error);
 
   return (
     <main className="min-h-screen bg-zinc-950 p-8 text-zinc-100">

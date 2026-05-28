@@ -10,6 +10,7 @@ import type {
   AgentRuntimeProfileResult,
   RuntimeProfileDockerfileResult,
 } from '@/contracts/ipc/agent-runtime.contract';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import {
   useAgentRuntimeProfileDockerfile,
   useOpenAgentRuntimeProfileFolder,
@@ -47,7 +48,7 @@ export function DockerfileEditorPanel({
   if (dockerfile.error) {
     return (
       <section className="rounded-md border border-zinc-800 bg-zinc-950/60 p-4">
-        <p className="text-sm text-red-300">{dockerfile.error.message}</p>
+        <p className="text-sm text-red-300">{formatRendererError(dockerfile.error)}</p>
       </section>
     );
   }
@@ -226,7 +227,9 @@ function DockerfileEditor({
         />
       </div>
 
-      {actionError && <p className="mt-3 text-sm text-red-300">{actionError.message}</p>}
+      {actionError && (
+        <p className="mt-3 text-sm text-red-300">{formatRendererError(actionError)}</p>
+      )}
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import path from 'node:path';
 import type { GitRepositoryInfo, GitRepositoryInspector } from '@/core/workspaces/domain';
+import { AppError } from '@/shared/app-errors';
 
 export class LocalGitRepositoryInspector implements GitRepositoryInspector {
   async inspect(repoPath: string): Promise<GitRepositoryInfo> {
@@ -19,7 +20,7 @@ function runGit(cwd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile('git', args, { cwd, encoding: 'utf8' }, (error, stdout, stderr) => {
       if (error) {
-        reject(new Error((stderr || error.message).trim()));
+        reject(new AppError('WORKSPACE_INVALID', (stderr || error.message).trim()));
         return;
       }
 

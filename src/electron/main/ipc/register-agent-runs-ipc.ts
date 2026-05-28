@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { ipcMain } from 'electron';
 import type {
   AgentRunCommitDetail,
   AgentRunCommitFileDiff,
@@ -39,6 +38,8 @@ import {
   type AgentRunDetailResult,
   type AgentRunResult,
 } from '@/contracts/ipc/agent-runs.contract';
+import { AppError } from '@/shared/app-errors';
+import { registerIpcHandler } from './ipc-handler-wrapper';
 
 export type AgentRunsIpcDeps = {
   agentRunRepository: AgentRunRepository;
@@ -91,7 +92,7 @@ export function createAgentRunsIpcHandlers(deps: AgentRunsIpcDeps) {
       });
 
       if (!detail) {
-        throw new Error('Agent run not found.');
+        throw new AppError('NOT_FOUND', 'Agent run not found.');
       }
 
       return AgentRunDetailSchema.parse(detail);
@@ -129,10 +130,10 @@ export function createAgentRunsIpcHandlers(deps: AgentRunsIpcDeps) {
 
 export function registerAgentRunsIpcHandlers(deps: AgentRunsIpcDeps): void {
   const handlers = createAgentRunsIpcHandlers(deps);
-  ipcMain.handle(AGENT_RUNS_IPC_CHANNELS.start, handlers.start);
-  ipcMain.handle(AGENT_RUNS_IPC_CHANNELS.list, handlers.list);
-  ipcMain.handle(AGENT_RUNS_IPC_CHANNELS.get, handlers.get);
-  ipcMain.handle(AGENT_RUNS_IPC_CHANNELS.getCommitDetails, handlers.getCommitDetails);
-  ipcMain.handle(AGENT_RUNS_IPC_CHANNELS.getCommitFileDiff, handlers.getCommitFileDiff);
-  ipcMain.handle(AGENT_RUNS_IPC_CHANNELS.cancel, handlers.cancel);
+  registerIpcHandler(AGENT_RUNS_IPC_CHANNELS.start, handlers.start);
+  registerIpcHandler(AGENT_RUNS_IPC_CHANNELS.list, handlers.list);
+  registerIpcHandler(AGENT_RUNS_IPC_CHANNELS.get, handlers.get);
+  registerIpcHandler(AGENT_RUNS_IPC_CHANNELS.getCommitDetails, handlers.getCommitDetails);
+  registerIpcHandler(AGENT_RUNS_IPC_CHANNELS.getCommitFileDiff, handlers.getCommitFileDiff);
+  registerIpcHandler(AGENT_RUNS_IPC_CHANNELS.cancel, handlers.cancel);
 }

@@ -1,4 +1,3 @@
-import { ipcMain } from 'electron';
 import { getAppInfo } from '@/core/app-info/application/use-cases/get-app-info';
 import type { AppInfoProvider } from '@/core/app-info/domain';
 import {
@@ -6,6 +5,7 @@ import {
   AppInfoResultSchema,
   type AppInfoResult,
 } from '@/contracts/ipc/app-info.contract';
+import { registerIpcHandler } from './ipc-handler-wrapper';
 
 export type AppInfoIpcDeps = {
   appInfoProvider: AppInfoProvider;
@@ -22,5 +22,5 @@ export function createAppInfoIpcHandlers(deps: AppInfoIpcDeps) {
 
 export function registerAppInfoIpcHandlers(deps: AppInfoIpcDeps): void {
   const handlers = createAppInfoIpcHandlers(deps);
-  ipcMain.handle(APP_INFO_IPC_CHANNELS.get, handlers.get);
+  registerIpcHandler(APP_INFO_IPC_CHANNELS.get, handlers.get);
 }

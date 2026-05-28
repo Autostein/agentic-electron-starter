@@ -6,6 +6,7 @@ import type {
   AgentRunCommitResult,
   AgentRunDiffLineResult,
 } from '@/contracts/ipc/agent-runs.contract';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import {
   useAgentRun,
   useAgentRunCommitDetails,
@@ -32,7 +33,7 @@ export function AgentRunDetailPage() {
   }
 
   if (detail.error) {
-    return <p className="text-sm text-red-300">{detail.error.message}</p>;
+    return <p className="text-sm text-red-300">{formatRendererError(detail.error)}</p>;
   }
 
   if (!detail.data) {
@@ -193,7 +194,7 @@ function CommitDiffPanel({
       </div>
 
       {detail.isLoading && <p className="p-4 text-sm text-zinc-400">Loading commit diff</p>}
-      {detail.error && <p className="p-4 text-sm text-red-300">{detail.error.message}</p>}
+      {detail.error && <p className="p-4 text-sm text-red-300">{formatRendererError(detail.error)}</p>}
       {detail.data && (
         <div>
           <div className="border-b border-zinc-800 p-4">
@@ -277,7 +278,9 @@ function CommitFileDiffView({
         <p className="bg-zinc-950 p-4 text-sm text-zinc-400">Loading file diff</p>
       )}
       {showLargePlaceholder && expanded && loadedFile.error && (
-        <p className="bg-zinc-950 p-4 text-sm text-red-300">{loadedFile.error.message}</p>
+        <p className="bg-zinc-950 p-4 text-sm text-red-300">
+          {formatRendererError(loadedFile.error)}
+        </p>
       )}
       {(!showLargePlaceholder || loadedFile.data) && (
         <div className="overflow-x-auto bg-zinc-950 font-mono text-xs">

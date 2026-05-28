@@ -1,4 +1,3 @@
-import { ipcMain } from 'electron';
 import { listWorkspaces } from '@/core/workspaces/application/use-cases/list-workspaces';
 import { registerWorkspace } from '@/core/workspaces/application/use-cases/register-workspace';
 import type { GitRepositoryInspector, WorkspaceRepository } from '@/core/workspaces/domain';
@@ -8,6 +7,7 @@ import {
   WorkspacesListResultSchema,
   type WorkspaceResult,
 } from '@/contracts/ipc/workspaces.contract';
+import { registerIpcHandler } from './ipc-handler-wrapper';
 
 export type WorkspacesIpcDeps = {
   gitRepositoryInspector: GitRepositoryInspector;
@@ -42,6 +42,6 @@ export function createWorkspacesIpcHandlers(deps: WorkspacesIpcDeps) {
 
 export function registerWorkspacesIpcHandlers(deps: WorkspacesIpcDeps): void {
   const handlers = createWorkspacesIpcHandlers(deps);
-  ipcMain.handle(WORKSPACES_IPC_CHANNELS.list, handlers.list);
-  ipcMain.handle(WORKSPACES_IPC_CHANNELS.pick, handlers.pick);
+  registerIpcHandler(WORKSPACES_IPC_CHANNELS.list, handlers.list);
+  registerIpcHandler(WORKSPACES_IPC_CHANNELS.pick, handlers.pick);
 }

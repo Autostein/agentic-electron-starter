@@ -1,4 +1,5 @@
 import type { NoteRepository } from '../../domain';
+import { AppError } from '@/shared/app-errors';
 
 export async function deleteNote(
   id: string,
@@ -8,7 +9,7 @@ export async function deleteNote(
 ): Promise<void> {
   const normalizedId = id.trim();
   if (!normalizedId) {
-    throw new Error('Missing note id.');
+    throw new AppError('VALIDATION_FAILED', 'Missing note id.');
   }
 
   await deps.noteRepository.deleteNote(normalizedId);

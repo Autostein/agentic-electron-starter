@@ -10,6 +10,7 @@ import type {
   GetCommitFileDiffInput,
   GetCommitSummaryInput,
 } from '@/core/agent-runs/domain';
+import { AppError } from '@/shared/app-errors';
 import {
   parseNumstat,
   parseUnifiedDiff,
@@ -133,7 +134,7 @@ function runGit(cwd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     execFile('git', args, { cwd, encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 }, (error, stdout, stderr) => {
       if (error) {
-        reject(new Error((stderr || error.message).trim()));
+        reject(new AppError('NOT_FOUND', (stderr || error.message).trim()));
         return;
       }
 

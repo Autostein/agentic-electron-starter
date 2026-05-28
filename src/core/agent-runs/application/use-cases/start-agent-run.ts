@@ -4,6 +4,7 @@ import type {
   AgentRuntimeProfile,
   AgentRuntimeProfileRepository,
 } from '@/core/agent-runtime/domain';
+import { AppError } from '@/shared/app-errors';
 import type {
   AgentRun,
   AgentRunEvent,
@@ -45,13 +46,13 @@ export async function startAgentRun(
   const workspace = await deps.workspaceRepository.getWorkspace(input.workspaceId);
 
   if (!workspace) {
-    throw new Error('Workspace not found.');
+    throw new AppError('NOT_FOUND', 'Workspace not found.');
   }
 
   const profile = await deps.profileRepository.getProfile(input.runtimeProfileId);
 
   if (!profile) {
-    throw new Error('Runtime profile not found.');
+    throw new AppError('NOT_FOUND', 'Runtime profile not found.');
   }
 
   await deps.validateRuntimeProfile(profile, input.provider);
@@ -66,7 +67,12 @@ export async function startAgentRun(
   );
 
   if (!imageStatus.available) {
-    throw new Error('Sandbox image is not available. Build it first.');
+    throw new AppError(
+      imageStatus.errorCode ?? 'IMAGE_MISSING',
+      imageStatus.errorCode === 'DOCKER_UNAVAILABLE'
+        ? imageStatus.errorMessage ?? 'Docker is unavailable.'
+        : 'Sandbox image is not available. Build it first.',
+    );
   }
 
   const runId = deps.createId();

@@ -6,6 +6,7 @@ import {
   STARTER_RUNTIME_PROFILE_ID,
   toRuntimeProfileImageName,
 } from '../../domain';
+import { AppError } from '@/shared/app-errors';
 
 export type DuplicateStarterRuntimeProfileInput = {
   name?: string;
@@ -25,7 +26,7 @@ export async function duplicateStarterRuntimeProfile(
   const starter = await deps.profileRepository.getProfile(STARTER_RUNTIME_PROFILE_ID);
 
   if (!starter) {
-    throw new Error('Starter runtime profile not found.');
+    throw new AppError('NOT_FOUND', 'Starter runtime profile not found.');
   }
 
   const id = deps.createId();

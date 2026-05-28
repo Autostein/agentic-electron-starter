@@ -1,5 +1,6 @@
 import { Bot, Plus } from 'lucide-react';
 import { Link } from 'react-router';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import { useAgentRuns } from '../hooks/use-agent-runs';
 
 export function AgentRunsPage() {
@@ -25,7 +26,7 @@ export function AgentRunsPage() {
 
       <div className="mt-6 divide-y divide-zinc-800 rounded-md border border-zinc-800 bg-zinc-900">
         {runs.isLoading && <p className="p-4 text-sm text-zinc-400">Loading runs</p>}
-        {runs.error && <p className="p-4 text-sm text-red-300">{runs.error.message}</p>}
+        {runs.error && <p className="p-4 text-sm text-red-300">{formatRendererError(runs.error)}</p>}
         {runs.data?.length === 0 && (
           <p className="p-4 text-sm text-zinc-400">No agent runs yet.</p>
         )}

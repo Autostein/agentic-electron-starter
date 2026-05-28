@@ -5,6 +5,7 @@ import type {
   CreateAgentRuntimeProfile,
   UpdateAgentRuntimeProfile,
 } from '@/core/agent-runtime/domain';
+import { AppError } from '@/shared/app-errors';
 import { getMainDatabase } from './db/client';
 
 export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileRepository {
@@ -112,7 +113,7 @@ export class SQLiteAgentRuntimeProfileRepository implements AgentRuntimeProfileR
     const current = await this.getProfile(id);
 
     if (!current) {
-      throw new Error('Runtime profile not found.');
+      throw new AppError('NOT_FOUND', 'Runtime profile not found.');
     }
 
     const next = { ...current, ...input, updatedAt };

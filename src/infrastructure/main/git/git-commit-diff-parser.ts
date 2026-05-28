@@ -2,6 +2,7 @@ import type {
   AgentRunCommitFileDiff,
   AgentRunDiffHunk,
 } from '@/core/agent-runs/application/read-models/commit-diff';
+import { AppError } from '@/shared/app-errors';
 
 export type ParsedNumstat = {
   filesChanged: number;
@@ -45,7 +46,7 @@ export function parseUnifiedFileDiff(output: string): AgentRunCommitFileDiff {
   const [file] = parseUnifiedDiffInternal(output, Number.POSITIVE_INFINITY);
 
   if (!file) {
-    throw new Error('No diff found for file.');
+    throw new AppError('NOT_FOUND', 'No diff found for file.');
   }
 
   return file;

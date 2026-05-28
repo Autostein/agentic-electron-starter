@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import { useCreateNote, useDeleteNote, useNotes } from '../hooks/use-notes';
 
 export function NotesPage() {
@@ -63,7 +64,7 @@ export function NotesPage() {
             Add note
           </button>
           {createNote.error && (
-            <p className="text-sm text-red-300">{createNote.error.message}</p>
+            <p className="text-sm text-red-300">{formatRendererError(createNote.error)}</p>
           )}
         </form>
       </div>
@@ -74,7 +75,9 @@ export function NotesPage() {
         </div>
         <div className="divide-y divide-zinc-800">
           {notes.isLoading && <p className="p-4 text-sm text-zinc-400">Loading notes</p>}
-          {notes.error && <p className="p-4 text-sm text-red-300">{notes.error.message}</p>}
+          {notes.error && (
+            <p className="p-4 text-sm text-red-300">{formatRendererError(notes.error)}</p>
+          )}
           {notes.data?.length === 0 && (
             <p className="p-4 text-sm text-zinc-400">No notes yet.</p>
           )}

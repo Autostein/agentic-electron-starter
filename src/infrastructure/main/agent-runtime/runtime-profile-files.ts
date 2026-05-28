@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { shell } from 'electron';
 import type { AgentRuntimeProfile } from '@/core/agent-runtime/domain';
+import { AppError } from '@/shared/app-errors';
 
 export type RuntimeProfileFilesOptions = {
   userDataPath: string;
@@ -49,7 +50,7 @@ export class RuntimeProfileFiles {
     const dockerfile = this.resolveDockerfile(profile);
 
     if (!dockerfile.editable) {
-      throw new Error('Starter Dockerfile is read-only. Duplicate it before editing.');
+      throw new AppError('VALIDATION_FAILED', 'Starter Dockerfile is read-only. Duplicate it before editing.');
     }
 
     fs.writeFileSync(dockerfile.path, content, 'utf8');
@@ -60,7 +61,7 @@ export class RuntimeProfileFiles {
     const dockerfile = this.resolveDockerfile(profile);
 
     if (!dockerfile.editable) {
-      throw new Error('Starter Dockerfile cannot be reset.');
+      throw new AppError('VALIDATION_FAILED', 'Starter Dockerfile cannot be reset.');
     }
 
     const content = fs.readFileSync(this.resolveBundledDockerfilePath(), 'utf8');
@@ -70,14 +71,14 @@ export class RuntimeProfileFiles {
 
   async openProfileFolder(profile: AgentRuntimeProfile): Promise<void> {
     if (profile.sourceKind === 'bundled-starter') {
-      throw new Error('Starter has no editable profile folder.');
+      throw new AppError('VALIDATION_FAILED', 'Starter has no editable profile folder.');
     }
 
     const profilePath = this.resolveManagedProfilePath(profile);
     const error = await shell.openPath(profilePath);
 
     if (error) {
-      throw new Error(error);
+      throw new AppError('UNKNOWN', error);
     }
   }
 
@@ -105,7 +106,7 @@ export class RuntimeProfileFiles {
     );
 
     if (!isInsidePath(fs.realpathSync(profilePath), fs.realpathSync(dockerfilePath))) {
-      throw new Error('Runtime Dockerfile resolves outside the expected path.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime Dockerfile resolves outside the expected path.');
     }
 
     return { path: dockerfilePath, editable: true };
@@ -117,40 +118,40 @@ export class RuntimeProfileFiles {
 
   private resolveManagedProfilePath(profile: AgentRuntimeProfile): string {
     if (profile.sourceKind !== 'user-managed-copy') {
-      throw new Error('Runtime profile is not user-managed.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime profile is not user-managed.');
     }
 
     if (!profile.profilePath) {
-      throw new Error('Runtime profile folder is missing.');
+      throw new AppError('NOT_FOUND', 'Runtime profile folder is missing.');
     }
 
     const profilesRoot = path.resolve(this.options.userDataPath, 'agent-runtime-profiles');
     const profilePath = path.resolve(profile.profilePath);
 
     if (!isInsidePath(profilesRoot, profilePath)) {
-      throw new Error('Runtime profile folder is outside the managed profile directory.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime profile folder is outside the managed profile directory.');
     }
 
     if (!fs.existsSync(profilePath)) {
-      throw new Error('Runtime profile folder not found.');
+      throw new AppError('NOT_FOUND', 'Runtime profile folder not found.');
     }
 
     const profileLinkStat = fs.lstatSync(profilePath);
     const profileStat = fs.statSync(profilePath);
 
     if (profileLinkStat.isSymbolicLink()) {
-      throw new Error('Runtime profile folder resolves outside the managed profile directory.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime profile folder resolves outside the managed profile directory.');
     }
 
     if (!profileStat.isDirectory()) {
-      throw new Error('Runtime profile folder is not a directory.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime profile folder is not a directory.');
     }
 
     const rootRealPath = fs.realpathSync(profilesRoot);
     const profileRealPath = fs.realpathSync(profilePath);
 
     if (!isInsidePath(rootRealPath, profileRealPath)) {
-      throw new Error('Runtime profile folder resolves outside the managed profile directory.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime profile folder resolves outside the managed profile directory.');
     }
 
     return profilePath;
@@ -158,18 +159,18 @@ export class RuntimeProfileFiles {
 
   private assertFile(filePath: string, missingMessage: string): string {
     if (!fs.existsSync(filePath)) {
-      throw new Error(missingMessage);
+      throw new AppError('NOT_FOUND', missingMessage);
     }
 
     const linkStat = fs.lstatSync(filePath);
     const stat = fs.statSync(filePath);
 
     if (linkStat.isSymbolicLink()) {
-      throw new Error('Runtime Dockerfile resolves outside the expected path.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime Dockerfile resolves outside the expected path.');
     }
 
     if (!stat.isFile()) {
-      throw new Error('Runtime Dockerfile path is not a file.');
+      throw new AppError('VALIDATION_FAILED', 'Runtime Dockerfile path is not a file.');
     }
 
     return filePath;

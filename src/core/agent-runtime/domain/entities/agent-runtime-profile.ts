@@ -1,3 +1,5 @@
+import type { AppErrorCode } from '@/shared/app-errors';
+
 export type AgentProviderId = 'claude-code' | 'codex';
 
 export type AgentRuntimeProfileSourceKind = 'bundled-starter' | 'user-managed-copy';
@@ -40,6 +42,7 @@ export type DockerImageStatus = {
   available: boolean;
   checkedAt: number;
   errorMessage?: string;
+  errorCode?: Extract<AppErrorCode, 'DOCKER_UNAVAILABLE' | 'IMAGE_MISSING'>;
 };
 
 export const STARTER_RUNTIME_PROFILE_ID = 'starter';

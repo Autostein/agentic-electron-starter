@@ -287,15 +287,16 @@ describe('agent run IPC handlers', () => {
       now: () => 123,
     });
 
-    await expect(
-      handlers.start(null, {
-        workspaceId: 'workspace-1',
-        runtimeProfileId: 'profile-1',
-        provider: 'codex',
-        model: 'gpt-5.4',
-        prompt: 'Implement it',
-      }),
-    ).rejects.toThrow('Sandbox image is not available. Build it first.');
+    await expect(handlers.start(null, {
+      workspaceId: 'workspace-1',
+      runtimeProfileId: 'profile-1',
+      provider: 'codex',
+      model: 'gpt-5.4',
+      prompt: 'Implement it',
+    })).rejects.toMatchObject({
+      code: 'IMAGE_MISSING',
+      message: 'Sandbox image is not available. Build it first.',
+    });
 
     expect(await runRepository.listRuns()).toEqual([]);
     expect(runner.started).toBe(false);
@@ -385,6 +386,9 @@ describe('agent run IPC handlers', () => {
     await expect(handlers.getCommitDetails(null, {
       runId: 'run-1',
       sha: 'missing',
-    })).rejects.toThrow('Commit is not recorded on this run.');
+    })).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+      message: 'Commit is not recorded on this run.',
+    });
   });
 });

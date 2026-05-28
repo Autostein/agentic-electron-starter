@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { ipcMain } from 'electron';
 import { buildSandboxImage } from '@/core/agent-runtime/application/use-cases/build-sandbox-image';
 import { duplicateStarterRuntimeProfile } from '@/core/agent-runtime/application/use-cases/duplicate-starter-runtime-profile';
 import { getRuntimeProfile } from '@/core/agent-runtime/application/use-cases/get-runtime-profile';
@@ -34,6 +33,8 @@ import {
   type UpdateRuntimeProfileDockerfileResult,
 } from '@/contracts/ipc/agent-runtime.contract';
 import type { RuntimeProfileDockerfile } from '@/infrastructure/main/agent-runtime/runtime-profile-files';
+import { AppError } from '@/shared/app-errors';
+import { registerIpcHandler } from './ipc-handler-wrapper';
 
 export type AgentRuntimeIpcDeps = {
   dockerImageBuilder: DockerImageBuilder;
@@ -65,7 +66,7 @@ export function createAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps) {
       });
 
       if (!profile) {
-        throw new Error('Runtime profile not found.');
+        throw new AppError('NOT_FOUND', 'Runtime profile not found.');
       }
 
       return AgentRuntimeProfileResultSchema.parse(profile);
@@ -157,7 +158,7 @@ export function createAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps) {
       const input = RuntimeProfileImageInputSchema.parse(payload);
 
       if (activeBuild) {
-        throw new Error('Docker image build is already running.');
+        throw new AppError('RUN_ALREADY_ACTIVE', 'Docker image build is already running.');
       }
 
       activeBuild = (async () => {
@@ -184,28 +185,28 @@ export function createAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps) {
 
 export function registerAgentRuntimeIpcHandlers(deps: AgentRuntimeIpcDeps): void {
   const handlers = createAgentRuntimeIpcHandlers(deps);
-  ipcMain.handle(AGENT_RUNTIME_IPC_CHANNELS.listProfiles, handlers.listProfiles);
-  ipcMain.handle(AGENT_RUNTIME_IPC_CHANNELS.getProfile, handlers.getProfile);
-  ipcMain.handle(AGENT_RUNTIME_IPC_CHANNELS.updateProfile, handlers.updateProfile);
-  ipcMain.handle(
+  registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.listProfiles, handlers.listProfiles);
+  registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.getProfile, handlers.getProfile);
+  registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.updateProfile, handlers.updateProfile);
+  registerIpcHandler(
     AGENT_RUNTIME_IPC_CHANNELS.duplicateStarterProfile,
     handlers.duplicateStarterProfile,
   );
-  ipcMain.handle(
+  registerIpcHandler(
     AGENT_RUNTIME_IPC_CHANNELS.getProfileDockerfile,
     handlers.getProfileDockerfile,
   );
-  ipcMain.handle(
+  registerIpcHandler(
     AGENT_RUNTIME_IPC_CHANNELS.updateProfileDockerfile,
     handlers.updateProfileDockerfile,
   );
-  ipcMain.handle(
+  registerIpcHandler(
     AGENT_RUNTIME_IPC_CHANNELS.resetProfileDockerfile,
     handlers.resetProfileDockerfile,
   );
-  ipcMain.handle(AGENT_RUNTIME_IPC_CHANNELS.openProfileFolder, handlers.openProfileFolder);
-  ipcMain.handle(AGENT_RUNTIME_IPC_CHANNELS.getImageStatus, handlers.getImageStatus);
-  ipcMain.handle(AGENT_RUNTIME_IPC_CHANNELS.buildImage, handlers.buildImage);
+  registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.openProfileFolder, handlers.openProfileFolder);
+  registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.getImageStatus, handlers.getImageStatus);
+  registerIpcHandler(AGENT_RUNTIME_IPC_CHANNELS.buildImage, handlers.buildImage);
 }
 
 async function getRequiredProfile(
@@ -215,7 +216,7 @@ async function getRequiredProfile(
   const profile = await profileRepository.getProfile(id);
 
   if (!profile) {
-    throw new Error('Runtime profile not found.');
+    throw new AppError('NOT_FOUND', 'Runtime profile not found.');
   }
 
   return profile;

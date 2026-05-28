@@ -1,4 +1,5 @@
 import type { Note, NoteRepository } from '../../domain';
+import { AppError } from '@/shared/app-errors';
 
 export type CreateNoteCommand = {
   title: string;
@@ -15,7 +16,7 @@ export async function createNote(
 ): Promise<Note> {
   const title = command.title.trim();
   if (!title) {
-    throw new Error('Missing note title.');
+    throw new AppError('VALIDATION_FAILED', 'Missing note title.');
   }
 
   const now = deps.now();

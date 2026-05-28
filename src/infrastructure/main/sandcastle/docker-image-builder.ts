@@ -8,6 +8,7 @@ import type {
   DockerImageBuildResult,
   DockerImageStatus,
 } from '@/core/agent-runtime/domain';
+import { AppError } from '@/shared/app-errors';
 import { RuntimeProfileFiles } from '../agent-runtime/runtime-profile-files';
 
 export type LocalDockerImageBuilderOptions = {
@@ -39,7 +40,7 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
           imageName: input.imageName,
           available: false,
           checkedAt,
-          errorMessage: toDockerStatusMessage(error, stderr),
+          ...toDockerStatus(error, stderr),
         });
       });
     });
@@ -73,8 +74,13 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
         emitLines(chunk, 'log', onEvent);
       });
       child.on('error', (error) => {
-        onEvent({ type: 'error', message: error.message, createdAt: Date.now() });
-        reject(error);
+        const appError = new AppError(
+          'DOCKER_UNAVAILABLE',
+          'Docker is unavailable. Start Docker and try again.',
+          { details: { cause: error.message } },
+        );
+        onEvent({ type: 'error', message: appError.message, createdAt: Date.now() });
+        reject(appError);
       });
       child.on('close', (code) => {
         if (code === 0) {
@@ -87,7 +93,10 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
           return;
         }
 
-        const error = new Error(`Docker image build failed with exit code ${code ?? 'unknown'}.`);
+        const error = new AppError(
+          'DOCKER_UNAVAILABLE',
+          `Docker image build failed with exit code ${code ?? 'unknown'}.`,
+        );
         onEvent({ type: 'error', message: error.message, createdAt: Date.now() });
         reject(error);
       });
@@ -97,7 +106,7 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
   private resolveBuildContext(input: BuildDockerImageInput): string {
     if (input.sourceKind === 'user-managed-copy') {
       if (!input.profilePath || !fs.existsSync(input.profilePath)) {
-        throw new Error('Runtime profile folder is missing.');
+        throw new AppError('NOT_FOUND', 'Runtime profile folder is missing.');
       }
 
       return input.profilePath;
@@ -116,14 +125,28 @@ export class LocalDockerImageBuilder implements DockerImageBuilder {
   }
 }
 
-function toDockerStatusMessage(error: Error, stderr: string | Buffer): string {
+function toDockerStatus(
+  error: Error & { code?: unknown },
+  stderr: string | Buffer,
+): {
+  errorMessage: string;
+  errorCode: 'DOCKER_UNAVAILABLE' | 'IMAGE_MISSING';
+} {
   const output = stderr.toString().trim();
 
   if (output.includes('No such image')) {
-    return 'Image not found locally.';
+    return {
+      errorMessage: 'Image not found locally.',
+      errorCode: 'IMAGE_MISSING',
+    };
   }
 
-  return output || error.message;
+  return {
+    errorMessage: output || (error.code === 'ENOENT'
+      ? 'Docker is unavailable. Start Docker and try again.'
+      : error.message),
+    errorCode: 'DOCKER_UNAVAILABLE',
+  };
 }
 
 function emitLines(

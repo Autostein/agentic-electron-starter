@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Hammer, RefreshCcw } from 'lucide-react';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import type {
   useAgentRuntimeImageStatus,
   useBuildAgentRuntimeImage,
@@ -81,7 +82,7 @@ export function SandboxImagePanel({
             </p>
           ))}
           {buildImage.mutation.error && (
-            <p className="text-red-300">{buildImage.mutation.error.message}</p>
+            <p className="text-red-300">{formatRendererError(buildImage.mutation.error)}</p>
           )}
         </div>
       )}
@@ -95,7 +96,7 @@ function toStatusText(status: ReturnType<typeof useAgentRuntimeImageStatus>): st
   }
 
   if (status.error) {
-    return status.error.message;
+    return formatRendererError(status.error);
   }
 
   if (!status.data) {

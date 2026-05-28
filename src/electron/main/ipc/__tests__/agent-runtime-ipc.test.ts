@@ -10,6 +10,7 @@ import type {
   DockerImageStatus,
   UpdateAgentRuntimeProfile,
 } from '@/core/agent-runtime/domain';
+import { AppError } from '@/shared/app-errors';
 import { createAgentRuntimeIpcHandlers } from '../register-agent-runtime-ipc';
 
 class FakeProfileRepository implements AgentRuntimeProfileRepository {
@@ -223,7 +224,7 @@ describe('agent runtime IPC handlers', () => {
     const handlers = createHandlers({
       validateRuntimeProfile: (profile) => {
         if (profile.claudeAuthMountEnabled) {
-          throw new Error('Claude CLI auth directory not found.');
+          throw new AppError('AUTH_MISSING', 'Claude CLI auth directory not found.');
         }
       },
     });
@@ -231,7 +232,10 @@ describe('agent runtime IPC handlers', () => {
     await expect(handlers.updateProfile(null, {
       id: 'starter',
       claudeAuthMountEnabled: true,
-    })).rejects.toThrow('Claude CLI auth directory not found.');
+    })).rejects.toMatchObject({
+      code: 'AUTH_MISSING',
+      message: 'Claude CLI auth directory not found.',
+    });
   });
 
   it('publishes build events and rejects parallel builds', async () => {
@@ -243,9 +247,10 @@ describe('agent runtime IPC handlers', () => {
     });
 
     const build = handlers.buildImage(null, { profileId: 'starter' });
-    await expect(handlers.buildImage(null, { profileId: 'starter' })).rejects.toThrow(
-      'Docker image build is already running.',
-    );
+    await expect(handlers.buildImage(null, { profileId: 'starter' })).rejects.toMatchObject({
+      code: 'RUN_ALREADY_ACTIVE',
+      message: 'Docker image build is already running.',
+    });
     dockerImageBuilder.resolveBuild?.({ imageName: 'agentic:starter', succeeded: true });
 
     await expect(build).resolves.toEqual({ imageName: 'agentic:starter', succeeded: true });

@@ -1,4 +1,5 @@
 import { FolderOpen } from 'lucide-react';
+import { formatRendererError } from '@/electron/renderer/shared/errors';
 import { usePickWorkspace, useWorkspaces } from '../hooks/use-workspaces';
 
 export function WorkspacesPage() {
@@ -27,7 +28,9 @@ export function WorkspacesPage() {
 
       <div className="mt-6 divide-y divide-zinc-800 rounded-md border border-zinc-800 bg-zinc-900">
         {workspaces.isLoading && <p className="p-4 text-sm text-zinc-400">Loading workspaces</p>}
-        {workspaces.error && <p className="p-4 text-sm text-red-300">{workspaces.error.message}</p>}
+        {workspaces.error && (
+          <p className="p-4 text-sm text-red-300">{formatRendererError(workspaces.error)}</p>
+        )}
         {workspaces.data?.length === 0 && (
           <p className="p-4 text-sm text-zinc-400">
             No git-backed workspaces added yet.

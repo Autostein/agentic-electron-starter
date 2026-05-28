@@ -1,5 +1,4 @@
 import { randomUUID } from 'node:crypto';
-import { ipcMain } from 'electron';
 import { createNote } from '@/core/notes/application/use-cases/create-note';
 import { deleteNote } from '@/core/notes/application/use-cases/delete-note';
 import { listNotes } from '@/core/notes/application/use-cases/list-notes';
@@ -12,6 +11,7 @@ import {
   NotesListResultSchema,
   type NoteResult,
 } from '@/contracts/ipc/notes.contract';
+import { registerIpcHandler } from './ipc-handler-wrapper';
 
 export type NotesIpcDeps = {
   noteRepository: NoteRepository;
@@ -42,7 +42,7 @@ export function createNotesIpcHandlers(deps: NotesIpcDeps) {
 
 export function registerNotesIpcHandlers(deps: NotesIpcDeps): void {
   const handlers = createNotesIpcHandlers(deps);
-  ipcMain.handle(NOTES_IPC_CHANNELS.list, handlers.list);
-  ipcMain.handle(NOTES_IPC_CHANNELS.create, handlers.create);
-  ipcMain.handle(NOTES_IPC_CHANNELS.delete, handlers.delete);
+  registerIpcHandler(NOTES_IPC_CHANNELS.list, handlers.list);
+  registerIpcHandler(NOTES_IPC_CHANNELS.create, handlers.create);
+  registerIpcHandler(NOTES_IPC_CHANNELS.delete, handlers.delete);
 }
