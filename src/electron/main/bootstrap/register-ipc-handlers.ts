@@ -25,6 +25,7 @@ export function registerIpcHandlers(options: RegisterIpcHandlersOptions): void {
   registerAppInfoIpcHandlers({ appInfoProvider: deps.appInfoProvider });
   registerNotesIpcHandlers({ noteRepository: deps.noteRepository });
   registerWorkspacesIpcHandlers({
+    agentRunRepository: deps.agentRuns.agentRunRepository,
     gitRepositoryInspector: deps.workspaces.gitRepositoryInspector,
     workspaceRepository: deps.workspaces.workspaceRepository,
     pickDirectory: options.pickDirectory,

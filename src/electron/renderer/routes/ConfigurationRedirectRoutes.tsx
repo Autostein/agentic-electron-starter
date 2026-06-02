@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router';
 
 export function WorkspaceConfigurationRedirectRoute() {
-  return <Navigate to="/configuration?tab=workspaces" replace />;
+  return <Navigate to="/workspaces" replace />;
 }
 
 export function RuntimeConfigurationRedirectRoute() {

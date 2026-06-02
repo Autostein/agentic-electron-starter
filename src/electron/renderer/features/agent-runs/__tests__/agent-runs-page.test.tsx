@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { fireEvent, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import type { DesktopApi } from '@/contracts/ipc/shared/desktop-api';
 import { renderWithQuery } from '../../../shared/testing/render-with-query';
@@ -28,8 +28,37 @@ describe('AgentRunsPage', () => {
         get: vi.fn(),
       },
       workspaces: {
-        pick: vi.fn(),
-        list: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
+        list: vi.fn(async () => [
+          {
+            id: 'workspace-1',
+            name: 'repo',
+            folderCount: 1,
+            createdAt: 100,
+            updatedAt: 100,
+          },
+        ]),
+        get: vi.fn(async () => ({
+          id: 'workspace-1',
+          name: 'repo',
+          createdAt: 100,
+          updatedAt: 100,
+          folders: [
+            {
+              id: 'folder-1',
+              workspaceId: 'workspace-1',
+              label: 'repo',
+              path: '/repo',
+              currentBranch: 'main',
+              createdAt: 100,
+              updatedAt: 100,
+            },
+          ],
+        })),
+        pickFolder: vi.fn(),
+        updateFolder: vi.fn(),
+        removeFolder: vi.fn(),
       },
       agentRuns: {
         start: vi.fn(),
@@ -37,8 +66,10 @@ describe('AgentRunsPage', () => {
           {
             id: 'run-1',
             workspaceId: 'workspace-1',
-            workspacePath: '/repo',
             workspaceName: 'repo',
+            targetFolderId: 'folder-1',
+            targetFolderPath: '/repo',
+            targetFolderLabel: 'repo',
             runtimeProfileId: 'starter',
             runtimeProfileName: 'Starter',
             runtimeImageName: 'agentic:starter',
@@ -83,6 +114,11 @@ describe('AgentRunsPage', () => {
     } satisfies DesktopApi;
   });
 
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+
   it('renders persisted agent runs', async () => {
     renderWithQuery(
       <MemoryRouter>
@@ -99,9 +135,8 @@ describe('AgentRunsPage', () => {
     window.desktop.workspaces.list = vi.fn(async () => [
       {
         id: 'workspace-1',
-        path: '/repo',
         name: 'repo',
-        currentBranch: 'main',
+        folderCount: 1,
         createdAt: 100,
         updatedAt: 100,
       },
@@ -148,13 +183,55 @@ describe('AgentRunsPage', () => {
     });
   });
 
+  it('disables new runs when the selected workspace has no folders', async () => {
+    window.desktop.workspaces.list = vi.fn(async () => [
+      {
+        id: 'workspace-1',
+        name: 'repo',
+        folderCount: 0,
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    ]);
+    window.desktop.workspaces.get = vi.fn(async () => ({
+      id: 'workspace-1',
+      name: 'repo',
+      createdAt: 100,
+      updatedAt: 100,
+      folders: [],
+    }));
+    window.desktop.agentRuntime.getImageStatus = vi.fn(async () => ({
+      imageName: 'agentic:starter',
+      available: true,
+      checkedAt: 100,
+    }));
+
+    renderWithQuery(
+      <MemoryRouter>
+        <NewAgentRunPage />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(await screen.findByLabelText('Prompt'), {
+      target: { value: 'Document the repo' },
+    });
+    fireEvent.change(screen.getByLabelText('Model'), {
+      target: { value: 'gpt-5.4' },
+    });
+
+    expect(await screen.findByText('Add a folder to this workspace before starting a run.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /start run/i })).toBeDisabled();
+  });
+
   it('renders commit details and a polished diff on run detail', async () => {
     window.desktop.agentRuns.get = vi.fn(async () => ({
       run: {
         id: 'run-1',
         workspaceId: 'workspace-1',
-        workspacePath: '/repo',
         workspaceName: 'repo',
+        targetFolderId: 'folder-1',
+        targetFolderPath: '/repo',
+        targetFolderLabel: 'repo',
         runtimeProfileId: 'starter',
         runtimeProfileName: 'Starter',
         runtimeImageName: 'agentic:starter',

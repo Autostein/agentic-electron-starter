@@ -40,12 +40,12 @@ parentPort.on('message', (event) => {
 });
 
 async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
-  const { run: agentRun, profile, worktreePath } = message.payload;
+  const { run: agentRun, profile, worktreePath, contextFolders } = message.payload;
   abortController = new AbortController();
   fs.mkdirSync(path.dirname(agentRun.logFilePath), { recursive: true });
 
   postStatus('running', 'Run started');
-  await createWorktree(agentRun.workspacePath, worktreePath, agentRun.branchName);
+  await createWorktree(agentRun.targetFolderPath, worktreePath, agentRun.branchName);
 
   try {
     const result = await run({
@@ -56,10 +56,13 @@ async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
         imageName: profile.imageName,
         containerUid: process.getuid?.() ?? 1000,
         containerGid: process.getgid?.() ?? 1000,
-        mounts: toAuthMounts(agentRun.provider, profile),
+        mounts: [
+          ...toAuthMounts(agentRun.provider, profile),
+          ...toContextMounts(contextFolders),
+        ],
       }),
       cwd: worktreePath,
-      prompt: agentRun.prompt,
+      prompt: toRunPrompt(agentRun, contextFolders),
       maxIterations: agentRun.maxIterations,
       branchStrategy: { type: 'head' },
       logging: {
@@ -69,7 +72,7 @@ async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
           postStreamEvent(event);
         },
       },
-      hooks: toAuthHooks(agentRun.provider, profile),
+      hooks: toSandboxHooks(agentRun.provider, profile, contextFolders),
       signal: abortController.signal,
     });
 
@@ -88,12 +91,12 @@ async function startRun(message: AgentRunnerWorkerStartMessage): Promise<void> {
 }
 
 async function createWorktree(
-  workspacePath: string,
+  targetFolderPath: string,
   worktreePath: string,
   branchName: string,
 ): Promise<void> {
   fs.mkdirSync(path.dirname(worktreePath), { recursive: true });
-  await execGit(workspacePath, ['worktree', 'add', '-b', branchName, worktreePath, 'HEAD']);
+  await execGit(targetFolderPath, ['worktree', 'add', '-b', branchName, worktreePath, 'HEAD']);
 }
 
 function execGit(cwd: string, args: string[]): Promise<void> {
@@ -135,13 +138,13 @@ function toAuthMounts(
 function toAuthHooks(
   provider: 'claude-code' | 'codex',
   profile: AgentRunnerWorkerStartMessage['payload']['profile'],
-) {
+): string[] {
   const enabled = provider === 'claude-code'
     ? profile.claudeAuthMountEnabled
     : profile.codexAuthMountEnabled;
 
   if (!enabled) {
-    return undefined;
+    return [];
   }
 
   const source = provider === 'claude-code'
@@ -151,15 +154,71 @@ function toAuthHooks(
     ? '/home/agent/.claude'
     : '/home/agent/.codex';
 
+  return [
+    `mkdir -p ${destination} && cp -R ${source}/. ${destination}/ && chmod -R u+rwX ${destination}`,
+  ];
+}
+
+function toContextMounts(
+  contextFolders: AgentRunnerWorkerStartMessage['payload']['contextFolders'],
+): MountConfig[] {
+  return contextFolders.map((folder) => ({
+    hostPath: folder.path,
+    sandboxPath: folder.sandboxPath,
+    readonly: true,
+  }));
+}
+
+function toSandboxHooks(
+  provider: 'claude-code' | 'codex',
+  profile: AgentRunnerWorkerStartMessage['payload']['profile'],
+  contextFolders: AgentRunnerWorkerStartMessage['payload']['contextFolders'],
+) {
+  const readyCommands = [
+    ...toAuthHooks(provider, profile),
+    ...contextFolders.map((folder) => (
+      `git config --global --add safe.directory ${quoteShell(folder.sandboxPath)}`
+    )),
+  ];
+
+  if (readyCommands.length === 0) {
+    return undefined;
+  }
+
   return {
     sandbox: {
-      onSandboxReady: [
-        {
-          command: `mkdir -p ${destination} && cp -R ${source}/. ${destination}/ && chmod -R u+rwX ${destination}`,
-        },
-      ],
+      onSandboxReady: [{ command: readyCommands.join(' && ') }],
     },
   };
+}
+
+function toRunPrompt(
+  agentRun: AgentRunnerWorkerStartMessage['payload']['run'],
+  contextFolders: AgentRunnerWorkerStartMessage['payload']['contextFolders'],
+): string {
+  const contextLines = contextFolders.length === 0
+    ? ['Read-only context repos: none']
+    : [
+      'Read-only context repos:',
+      ...contextFolders.map((folder) => (
+        `- ${folder.label}: host ${folder.path}, sandbox ${folder.sandboxPath}`
+      )),
+    ];
+
+  return [
+    'Agentic workspace context:',
+    `Writable target repo: ${agentRun.targetFolderLabel}`,
+    `Writable host path: ${agentRun.targetFolderPath}`,
+    'Writable sandbox path: /home/agent/workspace',
+    ...contextLines,
+    '',
+    'User task:',
+    agentRun.prompt,
+  ].join('\n');
+}
+
+function quoteShell(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
 function postStreamEvent(event: AgentStreamEvent): void {

@@ -54,8 +54,13 @@ describe('RuntimesPage', () => {
         get: vi.fn(),
       },
       workspaces: {
-        pick: vi.fn(),
+        create: vi.fn(),
+        update: vi.fn(),
         list: vi.fn(),
+        get: vi.fn(),
+        pickFolder: vi.fn(),
+        updateFolder: vi.fn(),
+        removeFolder: vi.fn(),
       },
       agentRuns: {
         start: vi.fn(),

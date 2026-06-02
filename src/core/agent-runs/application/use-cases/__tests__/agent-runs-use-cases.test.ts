@@ -18,29 +18,95 @@ import type {
   DockerImageBuildResult,
   DockerImageStatus,
 } from '@/core/agent-runtime/domain';
-import type { Workspace, WorkspaceInput, WorkspaceRepository } from '@/core/workspaces/domain';
+import type {
+  Workspace,
+  WorkspaceDetail,
+  WorkspaceFolder,
+  WorkspaceFolderInput,
+  WorkspaceInput,
+  WorkspaceRepository,
+  WorkspaceSummary,
+} from '@/core/workspaces/domain';
 
 class FakeWorkspaceRepository implements WorkspaceRepository {
   workspace: Workspace = {
     id: 'workspace-1',
-    path: '/repo',
-    name: 'repo',
-    currentBranch: 'main',
+    name: 'Website',
     createdAt: 1,
     updatedAt: 1,
   };
+  folders: WorkspaceFolder[] = [
+    {
+      id: 'folder-1',
+      workspaceId: 'workspace-1',
+      label: 'app',
+      path: '/repo',
+      currentBranch: 'main',
+      createdAt: 1,
+      updatedAt: 1,
+    },
+    {
+      id: 'folder-2',
+      workspaceId: 'workspace-1',
+      label: 'api',
+      path: '/api',
+      currentBranch: 'main',
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ];
 
-  async listWorkspaces(): Promise<Workspace[]> {
-    return [this.workspace];
+  async listWorkspaces(): Promise<WorkspaceSummary[]> {
+    return [{ ...this.workspace, folderCount: this.folders.length }];
   }
 
   async getWorkspace(id: string): Promise<Workspace | null> {
     return id === this.workspace.id ? this.workspace : null;
   }
 
-  async upsertWorkspace(input: WorkspaceInput): Promise<Workspace> {
-    this.workspace = { ...this.workspace, ...input };
+  async getWorkspaceDetail(id: string): Promise<WorkspaceDetail | null> {
+    return id === this.workspace.id ? { ...this.workspace, folders: this.folders } : null;
+  }
+
+  async createWorkspace(input: Workspace & { name: string }): Promise<Workspace> {
+    this.workspace = { ...input };
     return this.workspace;
+  }
+
+  async updateWorkspace(id: string, input: WorkspaceInput, updatedAt: number): Promise<Workspace> {
+    if (id !== this.workspace.id) {
+      throw new Error('Workspace not found.');
+    }
+
+    this.workspace = { ...this.workspace, ...input, updatedAt };
+    return this.workspace;
+  }
+
+  async listFolders(workspaceId: string): Promise<WorkspaceFolder[]> {
+    return this.folders.filter((folder) => folder.workspaceId === workspaceId);
+  }
+
+  async getFolder(id: string): Promise<WorkspaceFolder | null> {
+    return this.folders.find((folder) => folder.id === id) ?? null;
+  }
+
+  async addFolder(input: WorkspaceFolderInput): Promise<WorkspaceFolder> {
+    const folder = { ...input, createdAt: 1, updatedAt: 1 };
+    this.folders.push(folder);
+    return folder;
+  }
+
+  async updateFolder(id: string, input: Pick<WorkspaceFolderInput, 'label'>): Promise<WorkspaceFolder> {
+    const folder = await this.getFolder(id);
+    if (!folder) {
+      throw new Error('Folder not found.');
+    }
+    Object.assign(folder, input);
+    return folder;
+  }
+
+  async removeFolder(id: string): Promise<void> {
+    this.folders = this.folders.filter((folder) => folder.id !== id);
   }
 }
 
@@ -99,6 +165,13 @@ class FakeRunRepository implements AgentRunRepository {
     return [...this.runs.values()];
   }
 
+  async hasActiveRunForTargetFolder(targetFolderId: string): Promise<boolean> {
+    return [...this.runs.values()].some((run) => (
+      run.targetFolderId === targetFolderId
+        && (run.status === 'queued' || run.status === 'running')
+    ));
+  }
+
   async applyRunStatusTransition(transition: AgentRunStatusTransition): Promise<void> {
     this.runs.set(transition.runId, transition.nextRun);
   }
@@ -122,12 +195,14 @@ class FakeRunRepository implements AgentRunRepository {
 
 class FakeRunner implements AgentRunner {
   started = false;
+  lastInput: Parameters<AgentRunner['start']>[0] | null = null;
 
   async start(
     input: Parameters<AgentRunner['start']>[0],
     callbacks: Parameters<AgentRunner['start']>[1],
   ): Promise<void> {
     this.started = true;
+    this.lastInput = input;
     await callbacks.onStatus('running');
     await callbacks.onEvent({
       runId: input.run.id,
@@ -165,11 +240,13 @@ class FakeDockerImageBuilder implements DockerImageBuilder {
 describe('agent run use-cases', () => {
   it('creates a run, starts the runner, and records events', async () => {
     const runRepository = new FakeRunRepository();
+    const runner = new FakeRunner();
     const published: AgentRunEvent[] = [];
 
     const run = await startAgentRun(
       {
         workspaceId: 'workspace-1',
+        targetFolderId: 'folder-1',
         runtimeProfileId: 'profile-1',
         provider: 'claude-code',
         model: 'claude-opus-4-7',
@@ -177,7 +254,7 @@ describe('agent run use-cases', () => {
       },
       {
         agentRunRepository: runRepository,
-        agentRunner: new FakeRunner(),
+        agentRunner: runner,
         workspaceRepository: new FakeWorkspaceRepository(),
         profileRepository: new FakeProfileRepository(),
         dockerImageBuilder: new FakeDockerImageBuilder(),
@@ -190,6 +267,20 @@ describe('agent run use-cases', () => {
     );
 
     expect(run.branchName).toMatch(/^agentic\/id-0-implement-feature/);
+    expect(run).toMatchObject({
+      workspaceName: 'Website',
+      targetFolderId: 'folder-1',
+      targetFolderPath: '/repo',
+      targetFolderLabel: 'app',
+    });
+    expect(runner.lastInput?.contextFolders).toEqual([
+      {
+        id: 'folder-2',
+        label: 'api',
+        path: '/api',
+        sandboxPath: '/mnt/agentic/context/folder-2',
+      },
+    ]);
     expect((await runRepository.getRun(run.id))?.status).toBe('succeeded');
     expect(runRepository.commits).toEqual([
       { runId: run.id, sha: 'abc123', createdAt: 123 },
@@ -213,6 +304,7 @@ describe('agent run use-cases', () => {
       startAgentRun(
         {
           workspaceId: 'workspace-1',
+          targetFolderId: 'folder-1',
           runtimeProfileId: 'profile-1',
           provider: 'codex',
           model: 'gpt-5.4',
@@ -232,6 +324,72 @@ describe('agent run use-cases', () => {
         },
       ),
     ).rejects.toThrow('Sandbox image is not available. Build it first.');
+
+    expect(await runRepository.listRuns()).toEqual([]);
+    expect(runner.started).toBe(false);
+  });
+
+  it('rejects missing workspaces before creating a run', async () => {
+    const runRepository = new FakeRunRepository();
+    const runner = new FakeRunner();
+
+    await expect(
+      startAgentRun(
+        {
+          workspaceId: 'missing',
+          targetFolderId: 'folder-1',
+          runtimeProfileId: 'profile-1',
+          provider: 'codex',
+          model: 'gpt-5.4',
+          prompt: 'Implement feature',
+        },
+        {
+          agentRunRepository: runRepository,
+          agentRunner: runner,
+          workspaceRepository: new FakeWorkspaceRepository(),
+          profileRepository: new FakeProfileRepository(),
+          dockerImageBuilder: new FakeDockerImageBuilder(),
+          validateRuntimeProfile: () => undefined,
+          createId: () => 'run-1',
+          createLogFilePath: (runId) => `/logs/${runId}.log`,
+          publishEvent: () => undefined,
+          now: () => 123,
+        },
+      ),
+    ).rejects.toThrow('Workspace not found.');
+
+    expect(await runRepository.listRuns()).toEqual([]);
+    expect(runner.started).toBe(false);
+  });
+
+  it('rejects missing target folders before creating a run', async () => {
+    const runRepository = new FakeRunRepository();
+    const runner = new FakeRunner();
+
+    await expect(
+      startAgentRun(
+        {
+          workspaceId: 'workspace-1',
+          targetFolderId: 'missing',
+          runtimeProfileId: 'profile-1',
+          provider: 'codex',
+          model: 'gpt-5.4',
+          prompt: 'Implement feature',
+        },
+        {
+          agentRunRepository: runRepository,
+          agentRunner: runner,
+          workspaceRepository: new FakeWorkspaceRepository(),
+          profileRepository: new FakeProfileRepository(),
+          dockerImageBuilder: new FakeDockerImageBuilder(),
+          validateRuntimeProfile: () => undefined,
+          createId: () => 'run-1',
+          createLogFilePath: (runId) => `/logs/${runId}.log`,
+          publishEvent: () => undefined,
+          now: () => 123,
+        },
+      ),
+    ).rejects.toThrow('Workspace folder not found.');
 
     expect(await runRepository.listRuns()).toEqual([]);
     expect(runner.started).toBe(false);

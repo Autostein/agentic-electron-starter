@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 const nowMs = sql`(strftime('%s', 'now') * 1000)`;
 
@@ -22,14 +22,33 @@ export const workspaces = sqliteTable(
   'workspaces',
   {
     id: text('id').primaryKey(),
-    path: text('path').notNull().unique(),
     name: text('name').notNull(),
-    currentBranch: text('current_branch'),
     createdAt: integer('created_at').notNull().default(nowMs),
     updatedAt: integer('updated_at').notNull().default(nowMs),
   },
   (table) => [
     index('workspaces_updated_at_idx').on(table.updatedAt),
+  ],
+);
+
+export const workspaceFolders = sqliteTable(
+  'workspace_folders',
+  {
+    id: text('id').primaryKey(),
+    workspaceId: text('workspace_id').notNull(),
+    label: text('label').notNull(),
+    path: text('path').notNull(),
+    currentBranch: text('current_branch'),
+    createdAt: integer('created_at').notNull().default(nowMs),
+    updatedAt: integer('updated_at').notNull().default(nowMs),
+  },
+  (table) => [
+    index('workspace_folders_workspace_id_idx').on(table.workspaceId),
+    uniqueIndex('workspace_folders_workspace_path_unique').on(table.workspaceId, table.path),
+    uniqueIndex('workspace_folders_workspace_label_unique').on(
+      table.workspaceId,
+      sql`${table.label} COLLATE NOCASE`,
+    ),
   ],
 );
 
@@ -50,8 +69,10 @@ export const agentRuns = sqliteTable(
   {
     id: text('id').primaryKey(),
     workspaceId: text('workspace_id').notNull(),
-    workspacePath: text('workspace_path').notNull(),
     workspaceName: text('workspace_name').notNull(),
+    targetFolderId: text('target_folder_id').notNull(),
+    targetFolderPath: text('target_folder_path').notNull(),
+    targetFolderLabel: text('target_folder_label').notNull(),
     runtimeProfileId: text('runtime_profile_id').notNull(),
     runtimeProfileName: text('runtime_profile_name').notNull(),
     runtimeImageName: text('runtime_image_name').notNull(),
@@ -69,6 +90,7 @@ export const agentRuns = sqliteTable(
   },
   (table) => [
     index('agent_runs_workspace_id_idx').on(table.workspaceId),
+    index('agent_runs_target_folder_id_idx').on(table.targetFolderId),
     index('agent_runs_created_at_idx').on(table.createdAt),
     index('agent_runs_status_idx').on(table.status),
   ],
@@ -107,5 +129,6 @@ export const dbSchema = {
   agentRuns,
   agentRuntimeProfiles,
   notes,
+  workspaceFolders,
   workspaces,
 };

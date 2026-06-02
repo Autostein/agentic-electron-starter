@@ -17,9 +17,11 @@ CREATE INDEX `agent_run_events_run_id_idx` ON `agent_run_events` (`run_id`);--> 
 CREATE INDEX `agent_run_events_created_at_idx` ON `agent_run_events` (`created_at`);--> statement-breakpoint
 CREATE TABLE `agent_runs` (
 	`id` text PRIMARY KEY NOT NULL,
-	`project_id` text NOT NULL,
-	`project_path` text NOT NULL,
-	`project_name` text NOT NULL,
+	`workspace_id` text NOT NULL,
+	`workspace_name` text NOT NULL,
+	`target_folder_id` text NOT NULL,
+	`target_folder_path` text NOT NULL,
+	`target_folder_label` text NOT NULL,
 	`provider` text NOT NULL,
 	`model` text NOT NULL,
 	`prompt` text NOT NULL,
@@ -33,7 +35,8 @@ CREATE TABLE `agent_runs` (
 	`error_message` text
 );
 --> statement-breakpoint
-CREATE INDEX `agent_runs_project_id_idx` ON `agent_runs` (`project_id`);--> statement-breakpoint
+CREATE INDEX `agent_runs_workspace_id_idx` ON `agent_runs` (`workspace_id`);--> statement-breakpoint
+CREATE INDEX `agent_runs_target_folder_id_idx` ON `agent_runs` (`target_folder_id`);--> statement-breakpoint
 CREATE INDEX `agent_runs_created_at_idx` ON `agent_runs` (`created_at`);--> statement-breakpoint
 CREATE INDEX `agent_runs_status_idx` ON `agent_runs` (`status`);--> statement-breakpoint
 CREATE TABLE `agent_runtime_settings` (
@@ -48,14 +51,24 @@ CREATE TABLE `agent_runtime_settings` (
 	`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `projects` (
+CREATE TABLE `workspaces` (
 	`id` text PRIMARY KEY NOT NULL,
-	`path` text NOT NULL,
 	`name` text NOT NULL,
+	`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) NOT NULL,
+	`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `workspaces_updated_at_idx` ON `workspaces` (`updated_at`);--> statement-breakpoint
+CREATE TABLE `workspace_folders` (
+	`id` text PRIMARY KEY NOT NULL,
+	`workspace_id` text NOT NULL,
+	`label` text NOT NULL,
+	`path` text NOT NULL,
 	`current_branch` text,
 	`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) NOT NULL,
 	`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `projects_path_unique` ON `projects` (`path`);--> statement-breakpoint
-CREATE INDEX `projects_updated_at_idx` ON `projects` (`updated_at`);
+CREATE INDEX `workspace_folders_workspace_id_idx` ON `workspace_folders` (`workspace_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `workspace_folders_workspace_path_unique` ON `workspace_folders` (`workspace_id`, `path`);--> statement-breakpoint
+CREATE UNIQUE INDEX `workspace_folders_workspace_label_unique` ON `workspace_folders` (`workspace_id`, `label` COLLATE NOCASE);

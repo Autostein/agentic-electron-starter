@@ -34,7 +34,11 @@ export async function getAgentRun(
   ]);
 
   const summaries = await Promise.all(
-    commits.map((commit) => getCommitSummary(run.workspacePath, commit, deps.gitCommitReadService)),
+    commits.map((commit) => getCommitSummary(
+      run.targetFolderPath,
+      commit,
+      deps.gitCommitReadService,
+    )),
   );
 
   return { run, events, commits: summaries };

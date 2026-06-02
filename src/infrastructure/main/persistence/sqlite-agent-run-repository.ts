@@ -17,18 +17,21 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
       .prepare(
         `
           INSERT INTO agent_runs (
-            id, workspace_id, workspace_path, workspace_name, runtime_profile_id, runtime_profile_name,
+            id, workspace_id, workspace_name, target_folder_id, target_folder_path,
+            target_folder_label, runtime_profile_id, runtime_profile_name,
             runtime_image_name, provider, model, prompt, max_iterations, status, branch_name,
             log_file_path, created_at, started_at, finished_at, error_message
           )
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL)
         `,
       )
       .run(
         input.id,
         input.workspaceId,
-        input.workspacePath,
         input.workspaceName,
+        input.targetFolderId,
+        input.targetFolderPath,
+        input.targetFolderLabel,
         input.runtimeProfileId,
         input.runtimeProfileName,
         input.runtimeImageName,
@@ -58,8 +61,10 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
           SELECT
             id,
             workspace_id AS workspaceId,
-            workspace_path AS workspacePath,
             workspace_name AS workspaceName,
+            target_folder_id AS targetFolderId,
+            target_folder_path AS targetFolderPath,
+            target_folder_label AS targetFolderLabel,
             runtime_profile_id AS runtimeProfileId,
             runtime_profile_name AS runtimeProfileName,
             runtime_image_name AS runtimeImageName,
@@ -92,8 +97,10 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
             SELECT
               id,
               workspace_id AS workspaceId,
-              workspace_path AS workspacePath,
               workspace_name AS workspaceName,
+              target_folder_id AS targetFolderId,
+              target_folder_path AS targetFolderPath,
+              target_folder_label AS targetFolderLabel,
               runtime_profile_id AS runtimeProfileId,
               runtime_profile_name AS runtimeProfileName,
               runtime_image_name AS runtimeImageName,
@@ -120,8 +127,10 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
             SELECT
               id,
               workspace_id AS workspaceId,
-              workspace_path AS workspacePath,
               workspace_name AS workspaceName,
+              target_folder_id AS targetFolderId,
+              target_folder_path AS targetFolderPath,
+              target_folder_label AS targetFolderLabel,
               runtime_profile_id AS runtimeProfileId,
               runtime_profile_name AS runtimeProfileName,
               runtime_image_name AS runtimeImageName,
@@ -143,6 +152,22 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
         .all();
 
     return (rows as AgentRunRow[]).map(toRun);
+  }
+
+  async hasActiveRunForTargetFolder(targetFolderId: string): Promise<boolean> {
+    const row = getMainDatabase()
+      .prepare(
+        `
+          SELECT id
+          FROM agent_runs
+          WHERE target_folder_id = ?
+            AND status IN ('queued', 'running')
+          LIMIT 1
+        `,
+      )
+      .get(targetFolderId);
+
+    return row !== undefined;
   }
 
   async applyRunStatusTransition(transition: AgentRunStatusTransition): Promise<void> {
@@ -220,8 +245,10 @@ export class SQLiteAgentRunRepository implements AgentRunRepository {
 type AgentRunRow = {
   id: string;
   workspaceId: string;
-  workspacePath: string;
   workspaceName: string;
+  targetFolderId: string;
+  targetFolderPath: string;
+  targetFolderLabel: string;
   runtimeProfileId: string;
   runtimeProfileName: string;
   runtimeImageName: string;
@@ -250,8 +277,10 @@ function toRun(row: AgentRunRow): AgentRun {
   return {
     id: row.id,
     workspaceId: row.workspaceId,
-    workspacePath: row.workspacePath,
     workspaceName: row.workspaceName,
+    targetFolderId: row.targetFolderId,
+    targetFolderPath: row.targetFolderPath,
+    targetFolderLabel: row.targetFolderLabel,
     runtimeProfileId: row.runtimeProfileId,
     runtimeProfileName: row.runtimeProfileName,
     runtimeImageName: row.runtimeImageName,

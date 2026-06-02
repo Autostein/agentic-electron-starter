@@ -1,9 +1,9 @@
-import type { Workspace, WorkspaceRepository } from '../../domain';
+import type { WorkspaceRepository, WorkspaceSummary } from '../../domain';
 
 export type ListWorkspacesDeps = {
   workspaceRepository: WorkspaceRepository;
 };
 
-export function listWorkspaces(deps: ListWorkspacesDeps): Promise<Workspace[]> {
+export function listWorkspaces(deps: ListWorkspacesDeps): Promise<WorkspaceSummary[]> {
   return deps.workspaceRepository.listWorkspaces();
 }

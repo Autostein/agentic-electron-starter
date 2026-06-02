@@ -14,8 +14,10 @@ import type { AgentRun } from '..';
 const baseRunInput = {
   id: 'run-1234567890',
   workspaceId: 'workspace-1',
-  workspacePath: '/repo',
-  workspaceName: 'repo',
+  workspaceName: 'Website',
+  targetFolderId: 'folder-1',
+  targetFolderPath: '/repo',
+  targetFolderLabel: 'repo',
   runtimeProfileId: 'profile-1',
   runtimeProfileName: 'Starter',
   runtimeImageName: 'agentic:test',

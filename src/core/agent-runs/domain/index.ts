@@ -1,6 +1,7 @@
 export type {
   AgentRun,
   AgentRunCommit,
+  AgentRunContextFolder,
   AgentRunStatusTransition,
   AgentRunStatus,
   CreateQueuedAgentRunInput,

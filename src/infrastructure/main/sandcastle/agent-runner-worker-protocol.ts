@@ -1,5 +1,10 @@
 import type { AgentRuntimeProfile } from '@/core/agent-runtime/domain';
-import type { AgentRun, AgentRunEventType, AgentRunStatus } from '@/core/agent-runs/domain';
+import type {
+  AgentRun,
+  AgentRunContextFolder,
+  AgentRunEventType,
+  AgentRunStatus,
+} from '@/core/agent-runs/domain';
 
 export type AgentRunnerWorkerStartMessage = {
   type: 'start';
@@ -7,6 +12,7 @@ export type AgentRunnerWorkerStartMessage = {
     run: AgentRun;
     profile: AgentRuntimeProfile;
     worktreePath: string;
+    contextFolders: AgentRunContextFolder[];
   };
 };
 

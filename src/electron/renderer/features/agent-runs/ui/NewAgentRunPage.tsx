@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
-import { FolderOpen, Play } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { FolderGit2, Play } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import type { AgentProviderResult } from '@/contracts/ipc/agent-runs.contract';
 import { formatRendererError } from '@/electron/renderer/shared/errors';
 import {
@@ -10,22 +10,27 @@ import {
   useBuildAgentRuntimeImage,
 } from '../../agent-runtime/hooks/use-agent-runtime';
 import { SandboxImagePanel } from '../../agent-runtime/ui/SandboxImagePanel';
-import { usePickWorkspace, useWorkspaces } from '../../workspaces/hooks/use-workspaces';
+import { useWorkspace, useWorkspaces } from '../../workspaces/hooks/use-workspaces';
 import { useStartAgentRun } from '../hooks/use-agent-runs';
 
 export function NewAgentRunPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const workspaces = useWorkspaces();
-  const pickWorkspace = usePickWorkspace();
   const profiles = useAgentRuntimeProfiles();
   const startRun = useStartAgentRun();
-  const [workspaceId, setWorkspaceId] = useState('');
+  const [workspaceId, setWorkspaceId] = useState(() => searchParams.get('workspaceId') ?? '');
+  const [targetFolderId, setTargetFolderId] = useState(() => searchParams.get('targetFolderId') ?? '');
   const [runtimeProfileId, setRuntimeProfileId] = useState('');
   const [provider, setProvider] = useState<AgentProviderResult>('claude-code');
   const [model, setModel] = useState('');
   const [prompt, setPrompt] = useState('');
   const [maxIterations, setMaxIterations] = useState(1);
   const effectiveWorkspaceId = workspaceId || workspaces.data?.[0]?.id || '';
+  const workspace = useWorkspace(effectiveWorkspaceId);
+  const selectedTargetFolder = workspace.data?.folders.find((folder) => folder.id === targetFolderId)
+    ?? workspace.data?.folders[0];
+  const effectiveTargetFolderId = targetFolderId || selectedTargetFolder?.id || '';
   const selectedProfile = profiles.data?.find((profile) => profile.id === runtimeProfileId)
     ?? profiles.data?.[0];
   const effectiveRuntimeProfileId = runtimeProfileId || selectedProfile?.id || '';
@@ -42,6 +47,7 @@ export function NewAgentRunPage() {
     startRun.mutate(
       {
         workspaceId: effectiveWorkspaceId,
+        targetFolderId: effectiveTargetFolderId,
         runtimeProfileId: effectiveRuntimeProfileId,
         provider,
         model,
@@ -57,6 +63,7 @@ export function NewAgentRunPage() {
   };
   const canStartRun = Boolean(
     effectiveWorkspaceId
+      && effectiveTargetFolderId
       && effectiveRuntimeProfileId
       && model.trim()
       && prompt.trim()
@@ -79,7 +86,10 @@ export function NewAgentRunPage() {
           <div className="mt-2 flex gap-2">
             <select
               value={effectiveWorkspaceId}
-              onChange={(event) => setWorkspaceId(event.target.value)}
+              onChange={(event) => {
+                setWorkspaceId(event.target.value);
+                setTargetFolderId('');
+              }}
               className="min-w-0 flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-400"
             >
               {workspaces.data?.map((workspace) => (
@@ -88,15 +98,34 @@ export function NewAgentRunPage() {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={() => pickWorkspace.mutate()}
+            <Link
+              to="/workspaces"
               className="inline-flex items-center gap-2 rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-100 hover:bg-zinc-800"
             >
-              <FolderOpen aria-hidden="true" className="h-4 w-4" />
-              Add
-            </button>
+              <FolderGit2 aria-hidden="true" className="h-4 w-4" />
+              Manage
+            </Link>
           </div>
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium text-zinc-200">Target folder</span>
+          <select
+            value={effectiveTargetFolderId}
+            onChange={(event) => setTargetFolderId(event.target.value)}
+            className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-emerald-400"
+          >
+            {workspace.data?.folders.map((folder) => (
+              <option key={folder.id} value={folder.id}>
+                {folder.label}
+              </option>
+            ))}
+          </select>
+          {workspace.data?.folders.length === 0 && (
+            <p className="mt-2 text-sm text-amber-300">
+              Add a folder to this workspace before starting a run.
+            </p>
+          )}
         </label>
 
         <label className="block">

@@ -23,6 +23,7 @@ import type { WorkspaceRepository } from '@/core/workspaces/domain';
 
 export type StartAgentRunInput = {
   workspaceId: string;
+  targetFolderId: string;
   runtimeProfileId: string;
   provider: AgentProviderId;
   model: string;
@@ -50,10 +51,16 @@ export async function startAgentRun(
   input: StartAgentRunInput,
   deps: StartAgentRunDeps,
 ): Promise<AgentRun> {
-  const workspace = await deps.workspaceRepository.getWorkspace(input.workspaceId);
+  const workspace = await deps.workspaceRepository.getWorkspaceDetail(input.workspaceId);
 
   if (!workspace) {
     throw new AppError('NOT_FOUND', 'Workspace not found.');
+  }
+
+  const targetFolder = workspace.folders.find((folder) => folder.id === input.targetFolderId);
+
+  if (!targetFolder) {
+    throw new AppError('NOT_FOUND', 'Workspace folder not found.');
   }
 
   const profile = await deps.profileRepository.getProfile(input.runtimeProfileId);
@@ -87,8 +94,10 @@ export async function startAgentRun(
   const queuedRun = createQueuedAgentRun({
     id: runId,
     workspaceId: workspace.id,
-    workspacePath: workspace.path,
     workspaceName: workspace.name,
+    targetFolderId: targetFolder.id,
+    targetFolderPath: targetFolder.path,
+    targetFolderLabel: targetFolder.label,
     runtimeProfileId: profile.id,
     runtimeProfileName: profile.name,
     runtimeImageName: profile.imageName,
@@ -103,7 +112,18 @@ export async function startAgentRun(
   const run = currentRun;
 
   await deps.agentRunner.start(
-    { run, profile },
+    {
+      run,
+      profile,
+      contextFolders: workspace.folders
+        .filter((folder) => folder.id !== targetFolder.id)
+        .map((folder) => ({
+          id: folder.id,
+          label: folder.label,
+          path: folder.path,
+          sandboxPath: toContextFolderSandboxPath(folder.id),
+        })),
+    },
     {
       onEvent: async (event) => {
         await recordEvent(
@@ -166,6 +186,11 @@ export async function startAgentRun(
   );
 
   return run;
+}
+
+function toContextFolderSandboxPath(folderId: string): string {
+  const safeId = folderId.replace(/[^a-zA-Z0-9_.-]/g, '-') || 'folder';
+  return `/mnt/agentic/context/${safeId}`;
 }
 
 async function recordEvent(

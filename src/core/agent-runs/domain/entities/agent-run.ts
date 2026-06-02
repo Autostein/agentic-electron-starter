@@ -16,8 +16,10 @@ export type AgentRunStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'ca
 export type AgentRun = {
   id: string;
   workspaceId: string;
-  workspacePath: string;
   workspaceName: string;
+  targetFolderId: string;
+  targetFolderPath: string;
+  targetFolderLabel: string;
   runtimeProfileId: string;
   runtimeProfileName: string;
   runtimeImageName: string;
@@ -37,8 +39,10 @@ export type AgentRun = {
 export type CreateAgentRunInput = {
   id: string;
   workspaceId: string;
-  workspacePath: string;
   workspaceName: string;
+  targetFolderId: string;
+  targetFolderPath: string;
+  targetFolderLabel: string;
   runtimeProfileId: string;
   runtimeProfileName: string;
   runtimeImageName: string;
@@ -66,9 +70,17 @@ export type AgentRunCommit = {
   createdAt: number;
 };
 
+export type AgentRunContextFolder = {
+  id: string;
+  label: string;
+  path: string;
+  sandboxPath: string;
+};
+
 export type StartAgentRunnerInput = {
   run: AgentRun;
   profile: AgentRuntimeProfile;
+  contextFolders: AgentRunContextFolder[];
 };
 
 export type AgentRunnerCallbacks = {

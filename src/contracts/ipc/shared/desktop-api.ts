@@ -29,7 +29,17 @@ import type {
   UpdateRuntimeProfileDockerfileResult,
 } from '../agent-runtime.contract';
 import type { CreateNoteInput, DeleteNoteInput, NoteResult } from '../notes.contract';
-import type { WorkspaceResult } from '../workspaces.contract';
+import type {
+  CreateWorkspaceInput,
+  GetWorkspaceInput,
+  PickWorkspaceFolderInput,
+  RemoveWorkspaceFolderInput,
+  UpdateWorkspaceFolderInput,
+  UpdateWorkspaceInput,
+  WorkspaceDetailResult,
+  WorkspaceFolderResult,
+  WorkspaceSummaryResult,
+} from '../workspaces.contract';
 
 export type DesktopUnsubscribe = () => void;
 
@@ -38,8 +48,13 @@ export type DesktopApi = {
     get: () => Promise<AppInfoResult>;
   };
   workspaces: {
-    pick: () => Promise<WorkspaceResult | null>;
-    list: () => Promise<WorkspaceResult[]>;
+    create: (input: CreateWorkspaceInput) => Promise<WorkspaceDetailResult>;
+    update: (input: UpdateWorkspaceInput) => Promise<WorkspaceDetailResult>;
+    list: () => Promise<WorkspaceSummaryResult[]>;
+    get: (input: GetWorkspaceInput) => Promise<WorkspaceDetailResult>;
+    pickFolder: (input: PickWorkspaceFolderInput) => Promise<WorkspaceFolderResult | null>;
+    updateFolder: (input: UpdateWorkspaceFolderInput) => Promise<WorkspaceFolderResult>;
+    removeFolder: (input: RemoveWorkspaceFolderInput) => Promise<void>;
   };
   agentRuns: {
     start: (input: StartAgentRunInput) => Promise<AgentRunResult>;

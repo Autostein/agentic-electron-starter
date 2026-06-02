@@ -22,6 +22,7 @@ export const AgentRunEventTypeSchema = z.enum(['status', 'log', 'tool', 'commit'
 
 export const StartAgentRunInputSchema = z.object({
   workspaceId: z.string().min(1),
+  targetFolderId: z.string().min(1),
   runtimeProfileId: z.string().min(1),
   provider: AgentProviderSchema,
   model: z.string().min(1),
@@ -59,8 +60,10 @@ export const GetAgentRunCommitFileDiffInputSchema = z.object({
 export const AgentRunResultSchema = z.object({
   id: z.string(),
   workspaceId: z.string(),
-  workspacePath: z.string(),
   workspaceName: z.string(),
+  targetFolderId: z.string(),
+  targetFolderPath: z.string(),
+  targetFolderLabel: z.string(),
   runtimeProfileId: z.string(),
   runtimeProfileName: z.string(),
   runtimeImageName: z.string(),

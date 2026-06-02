@@ -23,29 +23,85 @@ import type {
   DockerImageBuildResult,
   DockerImageStatus,
 } from '@/core/agent-runtime/domain';
-import type { Workspace, WorkspaceInput, WorkspaceRepository } from '@/core/workspaces/domain';
+import type {
+  Workspace,
+  WorkspaceDetail,
+  WorkspaceFolder,
+  WorkspaceFolderInput,
+  WorkspaceInput,
+  WorkspaceRepository,
+  WorkspaceSummary,
+} from '@/core/workspaces/domain';
 import { createAgentRunsIpcHandlers } from '../register-agent-runs-ipc';
 
 class FakeWorkspaceRepository implements WorkspaceRepository {
   workspace: Workspace = {
     id: 'workspace-1',
-    path: '/repo',
     name: 'repo',
+    createdAt: 1,
+    updatedAt: 1,
+  };
+  folder: WorkspaceFolder = {
+    id: 'folder-1',
+    workspaceId: 'workspace-1',
+    label: 'repo',
+    path: '/repo',
     currentBranch: 'main',
-      createdAt: 1,
+    createdAt: 1,
     updatedAt: 1,
   };
 
-  async listWorkspaces(): Promise<Workspace[]> {
-    return [this.workspace];
+  async listWorkspaces(): Promise<WorkspaceSummary[]> {
+    return [{ ...this.workspace, folderCount: 1 }];
   }
 
   async getWorkspace(id: string): Promise<Workspace | null> {
     return id === this.workspace.id ? this.workspace : null;
   }
 
-  async upsertWorkspace(input: WorkspaceInput): Promise<Workspace> {
-    return { ...this.workspace, ...input };
+  async getWorkspaceDetail(id: string): Promise<WorkspaceDetail | null> {
+    return id === this.workspace.id ? { ...this.workspace, folders: [this.folder] } : null;
+  }
+
+  async createWorkspace(
+    input: WorkspaceInput & { id: string },
+    timestamps: { createdAt: number; updatedAt: number },
+  ): Promise<Workspace> {
+    return { ...input, ...timestamps };
+  }
+
+  async updateWorkspace(id: string, input: WorkspaceInput, updatedAt: number): Promise<Workspace> {
+    this.workspace = { ...this.workspace, id, ...input, updatedAt };
+    return this.workspace;
+  }
+
+  async listFolders(workspaceId: string): Promise<WorkspaceFolder[]> {
+    return workspaceId === this.workspace.id ? [this.folder] : [];
+  }
+
+  async getFolder(id: string): Promise<WorkspaceFolder | null> {
+    return id === this.folder.id ? this.folder : null;
+  }
+
+  async addFolder(
+    input: WorkspaceFolderInput,
+    timestamps: { createdAt: number; updatedAt: number },
+  ): Promise<WorkspaceFolder> {
+    this.folder = { ...input, ...timestamps };
+    return this.folder;
+  }
+
+  async updateFolder(
+    id: string,
+    input: Pick<WorkspaceFolderInput, 'label'>,
+    updatedAt: number,
+  ): Promise<WorkspaceFolder> {
+    this.folder = { ...this.folder, id, ...input, updatedAt };
+    return this.folder;
+  }
+
+  async removeFolder(): Promise<void> {
+    return undefined;
   }
 }
 
@@ -122,6 +178,10 @@ class FakeRunRepository implements AgentRunRepository {
 
   async listCommits(): Promise<AgentRunCommit[]> {
     return this.commits;
+  }
+
+  async hasActiveRunForTargetFolder(): Promise<boolean> {
+    return false;
   }
 }
 
@@ -225,6 +285,7 @@ describe('agent run IPC handlers', () => {
 
     const run = await handlers.start(null, {
       workspaceId: 'workspace-1',
+      targetFolderId: 'folder-1',
       runtimeProfileId: 'profile-1',
       provider: 'codex',
       model: 'gpt-5.4',
@@ -252,6 +313,7 @@ describe('agent run IPC handlers', () => {
     await expect(
       handlers.start(null, {
         workspaceId: 'workspace-1',
+        targetFolderId: 'folder-1',
         runtimeProfileId: 'profile-1',
         provider: 'bad-provider',
         model: 'model',
@@ -280,6 +342,7 @@ describe('agent run IPC handlers', () => {
 
     await expect(handlers.start(null, {
       workspaceId: 'workspace-1',
+      targetFolderId: 'folder-1',
       runtimeProfileId: 'profile-1',
       provider: 'codex',
       model: 'gpt-5.4',
@@ -298,8 +361,10 @@ describe('agent run IPC handlers', () => {
     runRepository.runs.set('run-1', {
       id: 'run-1',
       workspaceId: 'workspace-1',
-      workspacePath: '/repo',
       workspaceName: 'repo',
+      targetFolderId: 'folder-1',
+      targetFolderPath: '/repo',
+      targetFolderLabel: 'repo',
       runtimeProfileId: 'profile-1',
       runtimeProfileName: 'Starter',
       runtimeImageName: 'agentic:test',
@@ -310,7 +375,7 @@ describe('agent run IPC handlers', () => {
       status: 'succeeded',
       branchName: 'agentic/run-1',
       logFilePath: '/logs/run-1.log',
-    createdAt: 1,
+      createdAt: 1,
       startedAt: 2,
       finishedAt: 3,
       errorMessage: null,
@@ -344,8 +409,10 @@ describe('agent run IPC handlers', () => {
     runRepository.runs.set('run-1', {
       id: 'run-1',
       workspaceId: 'workspace-1',
-      workspacePath: '/repo',
       workspaceName: 'repo',
+      targetFolderId: 'folder-1',
+      targetFolderPath: '/repo',
+      targetFolderLabel: 'repo',
       runtimeProfileId: 'profile-1',
       runtimeProfileName: 'Starter',
       runtimeImageName: 'agentic:test',
@@ -356,7 +423,7 @@ describe('agent run IPC handlers', () => {
       status: 'succeeded',
       branchName: 'agentic/run-1',
       logFilePath: '/logs/run-1.log',
-    createdAt: 1,
+      createdAt: 1,
       startedAt: 2,
       finishedAt: 3,
       errorMessage: null,

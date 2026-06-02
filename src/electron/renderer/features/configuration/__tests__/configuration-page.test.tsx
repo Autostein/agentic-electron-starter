@@ -8,13 +8,14 @@ import type {
   AgentRuntimeProfileResult,
 } from '@/contracts/ipc/agent-runtime.contract';
 import type { DesktopApi } from '@/contracts/ipc/shared/desktop-api';
-import type { WorkspaceResult } from '@/contracts/ipc/workspaces.contract';
+import type { WorkspaceSummaryResult } from '@/contracts/ipc/workspaces.contract';
 import { AppShell } from '../../../routes/AppShell';
 import {
   RuntimeConfigurationRedirectRoute,
   WorkspaceConfigurationRedirectRoute,
 } from '../../../routes/ConfigurationRedirectRoutes';
 import { renderWithQuery } from '../../../shared/testing/render-with-query';
+import { WorkspacesPage } from '../../workspaces/ui/WorkspacesPage';
 import { ConfigurationPage } from '../ui/ConfigurationPage';
 
 vi.mock('@uiw/react-codemirror', () => ({
@@ -39,7 +40,7 @@ vi.mock('@uiw/react-codemirror', () => ({
 }));
 
 describe('ConfigurationPage', () => {
-  let workspaces: WorkspaceResult[];
+  let workspaces: WorkspaceSummaryResult[];
   let profiles: AgentRuntimeProfileResult[];
   let providerAuthStatuses: AgentProviderAuthStatusResult[];
   let dockerfiles: Map<string, string>;
@@ -48,9 +49,8 @@ describe('ConfigurationPage', () => {
     workspaces = [
       {
         id: 'workspace-1',
-        path: '/repo',
         name: 'repo',
-        currentBranch: 'main',
+        folderCount: 1,
         createdAt: 1,
         updatedAt: 1,
       },
@@ -117,8 +117,13 @@ describe('ConfigurationPage', () => {
         get: vi.fn(),
       },
       workspaces: {
+        create: vi.fn(),
+        update: vi.fn(),
         list: vi.fn(async () => workspaces),
-        pick: vi.fn(async () => workspaces[0] ?? null),
+        get: vi.fn(),
+        pickFolder: vi.fn(),
+        updateFolder: vi.fn(),
+        removeFolder: vi.fn(),
       },
       agentRuns: {
         start: vi.fn(),
@@ -209,13 +214,12 @@ describe('ConfigurationPage', () => {
     vi.restoreAllMocks();
   });
 
-  it('defaults to the Workspaces tab', async () => {
+  it('defaults to the Runtimes tab', async () => {
     renderConfigurationPage('/configuration');
 
     expect(await screen.findByRole('heading', { name: 'Configuration' })).toBeTruthy();
-    expect(await screen.findByRole('heading', { name: 'Workspaces' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Add workspace' })).toBeTruthy();
-    expect(screen.getByText('/repo')).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Runtimes' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Duplicate starter' })).toBeTruthy();
   });
 
   it('shows Runtimes from the runtimes tab and legacy settings redirect', async () => {
@@ -252,6 +256,14 @@ describe('ConfigurationPage', () => {
     renderConfigurationPage('/projects');
 
     expect(await screen.findByRole('heading', { name: 'Workspaces' })).toBeTruthy();
+    expect(await screen.findByText('1 folder')).toBeTruthy();
+  });
+
+  it('redirects the legacy workspaces configuration tab to Workspaces', async () => {
+    renderConfigurationPage('/configuration?tab=workspaces');
+
+    expect(await screen.findByRole('heading', { name: 'Workspaces' })).toBeTruthy();
+    expect(await screen.findByText('1 folder')).toBeTruthy();
   });
 
   it('blocks tab switching with dirty Dockerfile edits', async () => {
@@ -287,7 +299,7 @@ describe('ConfigurationPage', () => {
     renderWithQuery(<RouterProvider router={router} />);
 
     expect(screen.getByRole('link', { name: 'Configuration' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Workspaces' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Workspaces' })).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Runtimes' })).toBeNull();
   });
 });
@@ -301,6 +313,7 @@ function renderConfigurationPage(initialEntry: string) {
         children: [
           { path: 'configuration', element: <ConfigurationPage /> },
           { path: 'projects', element: <WorkspaceConfigurationRedirectRoute /> },
+          { path: 'workspaces', element: <WorkspacesPage /> },
           { path: 'settings', element: <RuntimeConfigurationRedirectRoute /> },
         ],
       },

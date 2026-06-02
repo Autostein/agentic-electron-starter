@@ -6,6 +6,8 @@ import { ConfigurationRoute } from './routes/ConfigurationRoute';
 import { HomeRoute } from './routes/HomeRoute';
 import { NewAgentRunRoute } from './routes/NewAgentRunRoute';
 import { NotesRoute } from './routes/NotesRoute';
+import { WorkspaceDetailRoute } from './routes/WorkspaceDetailRoute';
+import { WorkspacesRoute } from './routes/WorkspacesRoute';
 import {
   RuntimeConfigurationRedirectRoute,
   WorkspaceConfigurationRedirectRoute,
@@ -22,6 +24,8 @@ export const router = createHashRouter([
       { path: 'runs', element: <AgentRunsRoute /> },
       { path: 'runs/new', element: <NewAgentRunRoute /> },
       { path: 'runs/:runId', element: <AgentRunDetailRoute /> },
+      { path: 'workspaces', element: <WorkspacesRoute /> },
+      { path: 'workspaces/:workspaceId', element: <WorkspaceDetailRoute /> },
       { path: 'configuration', element: <ConfigurationRoute /> },
       { path: 'projects', element: <WorkspaceConfigurationRedirectRoute /> },
       { path: 'settings', element: <RuntimeConfigurationRedirectRoute /> },

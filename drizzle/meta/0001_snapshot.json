@@ -115,22 +115,57 @@
           "notNull": true,
           "autoincrement": false
         },
-        "project_id": {
-          "name": "project_id",
+        "workspace_id": {
+          "name": "workspace_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "project_path": {
-          "name": "project_path",
+        "workspace_name": {
+          "name": "workspace_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "project_name": {
-          "name": "project_name",
+        "target_folder_id": {
+          "name": "target_folder_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "target_folder_path": {
+          "name": "target_folder_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "target_folder_label": {
+          "name": "target_folder_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "runtime_profile_id": {
+          "name": "runtime_profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "runtime_profile_name": {
+          "name": "runtime_profile_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "runtime_image_name": {
+          "name": "runtime_image_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -216,10 +251,17 @@
         }
       },
       "indexes": {
-        "agent_runs_project_id_idx": {
-          "name": "agent_runs_project_id_idx",
+        "agent_runs_workspace_id_idx": {
+          "name": "agent_runs_workspace_id_idx",
           "columns": [
-            "project_id"
+            "workspace_id"
+          ],
+          "isUnique": false
+        },
+        "agent_runs_target_folder_id_idx": {
+          "name": "agent_runs_target_folder_id_idx",
+          "columns": [
+            "target_folder_id"
           ],
           "isUnique": false
         },
@@ -243,8 +285,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "agent_runtime_settings": {
-      "name": "agent_runtime_settings",
+    "agent_runtime_profiles": {
+      "name": "agent_runtime_profiles",
       "columns": {
         "id": {
           "name": "id",
@@ -252,24 +294,31 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": false,
-          "default": "'default'"
+          "default": "'starter'"
         },
-        "docker_image_name": {
-          "name": "docker_image_name",
+        "name": {
+          "name": "name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "claude_default_model": {
-          "name": "claude_default_model",
+        "source_kind": {
+          "name": "source_kind",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "codex_default_model": {
-          "name": "codex_default_model",
+        "profile_path": {
+          "name": "profile_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "image_name": {
+          "name": "image_name",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -282,13 +331,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "claude_auth_host_path": {
-          "name": "claude_auth_host_path",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "codex_auth_mount_enabled": {
           "name": "codex_auth_mount_enabled",
           "type": "integer",
@@ -296,12 +338,13 @@
           "notNull": true,
           "autoincrement": false
         },
-        "codex_auth_host_path": {
-          "name": "codex_auth_host_path",
-          "type": "text",
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "(strftime('%s', 'now') * 1000)"
         },
         "updated_at": {
           "name": "updated_at",
@@ -381,8 +424,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "projects": {
-      "name": "projects",
+    "workspace_folders": {
+      "name": "workspace_folders",
       "columns": {
         "id": {
           "name": "id",
@@ -391,15 +434,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "path": {
-          "name": "path",
+        "workspace_id": {
+          "name": "workspace_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "name": {
-          "name": "name",
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "path": {
+          "name": "path",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -430,15 +480,72 @@
         }
       },
       "indexes": {
-        "projects_path_unique": {
-          "name": "projects_path_unique",
+        "workspace_folders_workspace_id_idx": {
+          "name": "workspace_folders_workspace_id_idx",
           "columns": [
+            "workspace_id"
+          ],
+          "isUnique": false
+        },
+        "workspace_folders_workspace_path_unique": {
+          "name": "workspace_folders_workspace_path_unique",
+          "columns": [
+            "workspace_id",
             "path"
           ],
           "isUnique": true
         },
-        "projects_updated_at_idx": {
-          "name": "projects_updated_at_idx",
+        "workspace_folders_workspace_label_unique": {
+          "name": "workspace_folders_workspace_label_unique",
+          "columns": [
+            "workspace_id",
+            "\"label\" COLLATE NOCASE"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "workspaces": {
+      "name": "workspaces",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%s', 'now') * 1000)"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%s', 'now') * 1000)"
+        }
+      },
+      "indexes": {
+        "workspaces_updated_at_idx": {
+          "name": "workspaces_updated_at_idx",
           "columns": [
             "updated_at"
           ],
@@ -459,6 +566,14 @@
     "columns": {}
   },
   "internal": {
-    "indexes": {}
+    "indexes": {
+      "workspace_folders_workspace_label_unique": {
+        "columns": {
+          "\"label\" COLLATE NOCASE": {
+            "isExpression": true
+          }
+        }
+      }
+    }
   }
 }

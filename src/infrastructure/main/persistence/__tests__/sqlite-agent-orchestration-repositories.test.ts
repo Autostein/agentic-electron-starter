@@ -1,16 +1,12 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { transitionAgentRunStatus } from '@/core/agent-runs/domain';
-import { closeMainDatabase, getMainDatabase, initializeMainDatabase } from '../db/client';
+import { closeMainDatabase, initializeMainDatabase } from '../db/client';
 import { SQLiteAgentRunRepository } from '../sqlite-agent-run-repository';
 import { SQLiteAgentRuntimeProfileRepository } from '../sqlite-agent-runtime-profile-repository';
 import { SQLiteWorkspaceRepository } from '../sqlite-workspace-repository';
-
-const databaseFileName = 'agentic-electron-starter.db';
-const statementBreakpoint = '--> statement-breakpoint';
 
 describe('SQLite agent orchestration repositories', () => {
   let userDataPath: string;
@@ -34,9 +30,29 @@ describe('SQLite agent orchestration repositories', () => {
     const profiles = new SQLiteAgentRuntimeProfileRepository();
     const runs = new SQLiteAgentRunRepository();
 
-    const workspace = await workspaces.upsertWorkspace(
-      { path: '/tmp/repo', name: 'repo', currentBranch: 'main' },
+    const workspace = await workspaces.createWorkspace(
+      { id: 'workspace-1', name: 'Website' },
       { createdAt: 100, updatedAt: 100 },
+    );
+    const appFolder = await workspaces.addFolder(
+      {
+        id: 'folder-app',
+        workspaceId: workspace.id,
+        label: 'Application',
+        path: '/tmp/repo',
+        currentBranch: 'main',
+      },
+      { createdAt: 110, updatedAt: 110 },
+    );
+    await workspaces.addFolder(
+      {
+        id: 'folder-docs',
+        workspaceId: workspace.id,
+        label: 'Docs',
+        path: '/tmp/docs',
+        currentBranch: 'main',
+      },
+      { createdAt: 120, updatedAt: 120 },
     );
     const starter = await profiles.getProfile('starter');
     const updatedProfile = await profiles.updateProfile(
@@ -59,8 +75,10 @@ describe('SQLite agent orchestration repositories', () => {
     const run = await runs.createRun({
       id: 'run-1',
       workspaceId: workspace.id,
-      workspacePath: workspace.path,
       workspaceName: workspace.name,
+      targetFolderId: appFolder.id,
+      targetFolderPath: appFolder.path,
+      targetFolderLabel: appFolder.label,
       runtimeProfileId: copy.id,
       runtimeProfileName: copy.name,
       runtimeImageName: copy.imageName,
@@ -85,16 +103,46 @@ describe('SQLite agent orchestration repositories', () => {
     });
     await runs.appendCommit({ runId: run.id, sha: 'abc123', createdAt: 600 });
 
-    await expect(workspaces.listWorkspaces()).resolves.toHaveLength(1);
+    await expect(workspaces.listWorkspaces()).resolves.toEqual([
+      {
+        id: workspace.id,
+        name: 'Website',
+        folderCount: 2,
+        createdAt: 100,
+        updatedAt: 100,
+      },
+    ]);
+    await expect(workspaces.getWorkspaceDetail(workspace.id)).resolves.toMatchObject({
+      id: workspace.id,
+      name: 'Website',
+      folders: [
+        {
+          id: 'folder-app',
+          label: 'Application',
+          path: '/tmp/repo',
+        },
+        {
+          id: 'folder-docs',
+          label: 'Docs',
+          path: '/tmp/docs',
+        },
+      ],
+    });
     expect(starter?.id).toBe('starter');
     expect(updatedProfile.codexAuthMountEnabled).toBe(true);
     await expect(profiles.listProfiles()).resolves.toHaveLength(2);
     expect((await runs.getRun(run.id))?.status).toBe('running');
     expect(await runs.getRun(run.id)).toMatchObject({
+      workspaceId: workspace.id,
+      workspaceName: 'Website',
+      targetFolderId: 'folder-app',
+      targetFolderPath: '/tmp/repo',
+      targetFolderLabel: 'Application',
       runtimeProfileId: 'profile-copy',
       runtimeProfileName: 'Starter copy',
       runtimeImageName: 'agentic-electron-starter-runtime:profile-copy',
     });
+    await expect(runs.hasActiveRunForTargetFolder(appFolder.id)).resolves.toBe(true);
     await expect(runs.listEvents(run.id)).resolves.toEqual([
       { id: 'event-1', runId: run.id, type: 'log', message: 'hello', createdAt: 500 },
     ]);
@@ -103,113 +151,43 @@ describe('SQLite agent orchestration repositories', () => {
     ]);
   });
 
-  it('migrates legacy projects and run snapshots into workspaces', async () => {
-    closeMainDatabase();
-    fs.rmSync(userDataPath, { recursive: true, force: true });
-    fs.mkdirSync(userDataPath, { recursive: true });
-    createLegacyProjectDatabase(userDataPath);
+  it('enforces workspace folder label and path uniqueness per workspace', async () => {
+    const workspaces = new SQLiteWorkspaceRepository();
+    const workspace = await workspaces.createWorkspace(
+      { id: 'workspace-1', name: 'Website' },
+      { createdAt: 100, updatedAt: 100 },
+    );
 
-    initializeMainDatabase({
-      userDataPath,
-      resourcesPath: process.cwd(),
-      isPackaged: false,
-    });
-
-    const db = getMainDatabase();
-    const workspaceTable = db
-      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'workspaces'")
-      .get();
-    const oldProjectTable = db
-      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'projects'")
-      .get();
-    const workspaceIndex = db
-      .prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'agent_runs_workspace_id_idx'")
-      .get();
-
-    expect(workspaceTable).toBeTruthy();
-    expect(oldProjectTable).toBeUndefined();
-    expect(workspaceIndex).toBeTruthy();
-    await expect(new SQLiteWorkspaceRepository().listWorkspaces()).resolves.toEqual([
+    await workspaces.addFolder(
       {
-        id: 'workspace-legacy',
-        path: '/legacy/repo',
-        name: 'repo',
+        id: 'folder-app',
+        workspaceId: workspace.id,
+        label: 'Application',
+        path: '/tmp/repo',
         currentBranch: 'main',
-        createdAt: 10,
-        updatedAt: 20,
       },
-    ]);
-    await expect(new SQLiteAgentRunRepository().getRun('run-legacy')).resolves.toMatchObject({
-      id: 'run-legacy',
-      workspaceId: 'workspace-legacy',
-      workspacePath: '/legacy/repo',
-      workspaceName: 'repo',
-      runtimeProfileId: 'starter',
-    });
+      { createdAt: 110, updatedAt: 110 },
+    );
+
+    await expect(workspaces.addFolder(
+      {
+        id: 'folder-path-copy',
+        workspaceId: workspace.id,
+        label: 'Other',
+        path: '/tmp/repo',
+        currentBranch: 'main',
+      },
+      { createdAt: 120, updatedAt: 120 },
+    )).rejects.toMatchObject({ message: 'Folder path already exists in this workspace.' });
+    await expect(workspaces.addFolder(
+      {
+        id: 'folder-label-copy',
+        workspaceId: workspace.id,
+        label: 'application',
+        path: '/tmp/other',
+        currentBranch: 'main',
+      },
+      { createdAt: 130, updatedAt: 130 },
+    )).rejects.toMatchObject({ message: 'Folder label already exists in this workspace.' });
   });
 });
-
-function createLegacyProjectDatabase(userDataPath: string): void {
-  const db = new DatabaseSync(path.join(userDataPath, databaseFileName));
-  const migrationNames = [
-    '0000_wild_fixer.sql',
-    '0001_married_the_executioner.sql',
-    '0002_runtime_profiles.sql',
-  ];
-
-  for (const migrationName of migrationNames) {
-    const migrationSql = fs.readFileSync(path.join(process.cwd(), 'drizzle', migrationName), 'utf8');
-    const statements = migrationSql
-      .split(statementBreakpoint)
-      .map((statement) => statement.trim())
-      .filter(Boolean);
-
-    for (const statement of statements) {
-      db.exec(statement);
-    }
-  }
-
-  db.exec(`
-    CREATE TABLE __agentic_migrations (
-      name TEXT PRIMARY KEY NOT NULL,
-      applied_at INTEGER NOT NULL
-    )
-  `);
-
-  for (const migrationName of migrationNames) {
-    db.prepare('INSERT INTO __agentic_migrations (name, applied_at) VALUES (?, ?)').run(
-      migrationName,
-      1,
-    );
-  }
-
-  db.prepare(`
-    INSERT INTO projects (id, path, name, current_branch, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run('workspace-legacy', '/legacy/repo', 'repo', 'main', 10, 20);
-  db.prepare(`
-    INSERT INTO agent_runs (
-      id, project_id, project_path, project_name, runtime_profile_id, runtime_profile_name,
-      runtime_image_name, provider, model, prompt, max_iterations, status, branch_name,
-      log_file_path, created_at
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    'run-legacy',
-    'workspace-legacy',
-    '/legacy/repo',
-    'repo',
-    'starter',
-    'Starter',
-    'agentic-electron-starter-runtime:starter',
-    'codex',
-    'gpt-5.4',
-    'Prompt',
-    1,
-    'queued',
-    'agentic/run-legacy',
-    '/logs/run-legacy.log',
-    30,
-  );
-  db.close();
-}

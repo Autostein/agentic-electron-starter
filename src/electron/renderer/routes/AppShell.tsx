@@ -1,8 +1,9 @@
-import { Bot, NotebookText, Settings } from 'lucide-react';
+import { Bot, FolderGit2, NotebookText, Settings } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router';
 
 const navItems = [
   { to: '/', label: 'Runs', icon: Bot },
+  { to: '/workspaces', label: 'Workspaces', icon: FolderGit2 },
   { to: '/configuration', label: 'Configuration', icon: Settings },
   { to: '/notes', label: 'Notes sample', icon: NotebookText },
 ];

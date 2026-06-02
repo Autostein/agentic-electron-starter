@@ -51,6 +51,7 @@ export function AgentRunDetailPage() {
             {run.provider}
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-white">{run.workspaceName}</h2>
+          <p className="mt-2 text-sm text-zinc-400">{run.targetFolderLabel}</p>
           <p className="mt-2 flex items-center gap-2 text-sm text-zinc-400">
             <GitBranch aria-hidden="true" className="h-4 w-4" />
             {run.branchName}

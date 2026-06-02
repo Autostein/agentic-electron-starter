@@ -42,7 +42,9 @@ export function AgentRunsPage() {
                 <h3 className="font-medium text-zinc-100">{run.workspaceName}</h3>
               </div>
               <p className="mt-2 line-clamp-2 text-sm text-zinc-300">{run.prompt}</p>
-              <p className="mt-2 text-xs text-zinc-500">{run.branchName}</p>
+              <p className="mt-2 text-xs text-zinc-500">
+                {run.targetFolderLabel} · {run.branchName}
+              </p>
             </div>
             <div className="text-right text-sm">
               <p className={statusClassName(run.status)}>{run.status}</p>
